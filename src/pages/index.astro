@@ -1,11 +1,305 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import TileShowcase from '../components/mahjong/TileShowcase';
+import MahjongTable from '../components/mahjong/MahjongTable';
+import LanguagePicker from '../components/LanguagePicker.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import { Sparkles, Trophy, Shield, Cpu, Smartphone, BarChart3, Users, Play, Award, BookOpen, Calculator, ArrowRight } from 'lucide-react';
 ---
 
-<Layout>
-	<Welcome />
+<Layout
+	lang="ja"
+	title="麻雀web - 無料オンライン麻雀 | 麻雀ゲーム.com"
+	description="登録不要ですぐに遊べる無料オンライン麻雀ゲーム。美しいSVG牌描画、AI対戦、段位戦、牌譜検討機能を備えた最新のブラウザ麻雀です。"
+>
+	<!-- Top Navigation Bar -->
+	<header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+			<div class="flex items-center gap-3">
+				<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-900/30 font-bold text-white text-xl">
+					🀄
+				</div>
+				<div>
+					<a href="/" class="text-lg font-black tracking-tight text-white hover:text-emerald-400 transition-colors">
+						麻雀web <span class="text-xs font-normal text-emerald-400 ml-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">無料オンライン麻雀</span>
+					</a>
+					<div class="text-[10px] text-slate-400 -mt-0.5 font-mono">麻雀ゲーム.com</div>
+				</div>
+			</div>
+
+			<!-- Nav Links -->
+			<nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+				<a href="#game" class="hover:text-emerald-400 transition-colors font-bold text-emerald-400">オンライン対局</a>
+				<a href="/yaku" class="hover:text-emerald-400 transition-colors flex items-center gap-1">
+					<span>役一覧ガイド</span>
+					<span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded-full border border-emerald-500/30">全役</span>
+				</a>
+				<a href="/calculator" class="hover:text-emerald-400 transition-colors flex items-center gap-1">
+					<span>点数計算機</span>
+					<span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.2 rounded-full border border-cyan-500/30">練習ドリル</span>
+				</a>
+				<a href="#showcase" class="hover:text-emerald-400 transition-colors">牌検証</a>
+				<a href="#comparison" class="hover:text-emerald-400 transition-colors">競合比較</a>
+			</nav>
+
+			<!-- Action Button & Language Picker -->
+			<div class="flex items-center gap-2.5 sm:gap-3">
+				<span class="hidden lg:inline-block text-xs text-slate-400">登録不要・即座に対局</span>
+				<LanguagePicker variant="compact" />
+				<a
+					href="#game"
+					class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-900/30 transition-all hover:scale-105 active:scale-95"
+				>
+					<Play className="w-4 h-4 fill-current" />
+					対局開始
+				</a>
+			</div>
+		</div>
+	</header>
+
+	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
+		<!-- Hero Section -->
+		<section class="text-center space-y-5 pt-4 pb-2">
+			<div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+				<Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
+				電脳麻将エンジン（@kobalab/majiang-core）完全統合
+			</div>
+			<h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white font-['Zen_Maru_Gothic'] leading-tight">
+				麻雀web - 無料オンライン麻雀
+			</h1>
+			<p class="max-w-2xl mx-auto text-sm sm:text-base text-slate-300 leading-relaxed">
+				伝統的な麻雀の奥深さと、最先端のモダンWeb技術（Astro 5 + React 19 + Tailwind v4）が融合。<br class="hidden sm:inline" />
+				電脳麻将の公式思考ルーチン（AI）によるリアル対戦、SVGベクター牌、直感的な打牌操作を提供します。
+			</p>
+
+			<!-- Interactive Tools Quick Access -->
+			<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto pt-2 text-left">
+				<a
+					href="/yaku"
+					class="group p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 hover:border-emerald-500/50 transition-all duration-200 shadow-xl flex items-center justify-between gap-4"
+				>
+					<div class="flex items-center gap-3">
+						<div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+							<BookOpen className="w-5 h-5" />
+						</div>
+						<div>
+							<div class="font-bold text-white text-sm group-hover:text-emerald-400 transition-colors flex items-center gap-1.5">
+								<span>役一覧ガイド（全手牌付き）</span>
+								<span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded-full border border-emerald-500/30">全役</span>
+							</div>
+							<div class="text-xs text-slate-400 mt-0.5">
+								1翻から役満まで全条件＆SVG手牌サンプル
+							</div>
+						</div>
+					</div>
+					<ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all shrink-0" />
+				</a>
+
+				<a
+					href="/calculator"
+					class="group p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 hover:border-cyan-500/50 transition-all duration-200 shadow-xl flex items-center justify-between gap-4"
+				>
+					<div class="flex items-center gap-3">
+						<div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+							<Calculator className="w-5 h-5" />
+						</div>
+						<div>
+							<div class="font-bold text-white text-sm group-hover:text-cyan-400 transition-colors flex items-center gap-1.5">
+								<span>点数計算シミュレーター</span>
+								<span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.2 rounded-full border border-cyan-500/30">練習ドリル</span>
+							</div>
+							<div class="text-xs text-slate-400 mt-0.5">
+								符・翻・点数授受の自動計算＆クイズ
+							</div>
+						</div>
+					</div>
+					<ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all shrink-0" />
+				</a>
+			</div>
+		</section>
+
+		<!-- Interactive Riichi Mahjong Game Table -->
+		<section id="game" class="space-y-6">
+			<div class="flex items-center justify-between border-b border-slate-800 pb-4">
+				<div>
+					<h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
+						<span class="w-2.5 h-6 rounded-full bg-emerald-500 inline-block"></span>
+						AI対局卓（電脳麻将コアエンジン搭載）
+					</h2>
+					<p class="text-xs sm:text-sm text-slate-400 mt-1">
+						25,000点持ち / 30,000点返し・赤ドラ3枚・喰い断あり・後付けあり・形式テンパイありの標準日本プロ連盟/天鳳ルール。
+					</p>
+				</div>
+			</div>
+
+			<!-- React Game Table Component -->
+			<MahjongTable client:only="react" lang="ja" />
+		</section>
+
+		<!-- Interactive Tile Showcase Component -->
+		<section id="showcase" class="space-y-6">
+			<div class="flex items-center justify-between border-b border-slate-800 pb-4">
+				<div>
+					<h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
+						<span class="w-2.5 h-6 rounded-full bg-emerald-500 inline-block"></span>
+						牌コンポーネント実機デモ（MahjongTile）
+					</h2>
+					<p class="text-xs sm:text-sm text-slate-400 mt-1">
+						萬子・筒子・索子・字牌・赤ドラ・横倒し（リーチ・鳴き）・伏せ牌（裏向き）を完全サポート。
+					</p>
+				</div>
+			</div>
+
+			<!-- React Hydrated Component -->
+			<TileShowcase client:load lang="ja" />
+		</section>
+
+		<!-- Strategic Competitive Analysis: Surpassing web-jong.com/game/tensei/ -->
+		<section id="comparison" class="space-y-8 pt-4">
+			<div class="border-b border-slate-800 pb-4">
+				<div class="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-amber-500/10 text-amber-300 text-xs font-bold border border-amber-500/20 mb-2">
+					<Trophy className="w-3.5 h-3.5" />
+					競合サイト（麻雀天聖 / web-jong.com）徹底分析＆差別化戦略
+				</div>
+				<h2 class="text-2xl sm:text-3xl font-extrabold text-white">
+					なぜ我々の麻雀ゲームが選ばれるのか
+				</h2>
+				<p class="text-sm text-slate-400 mt-2 max-w-3xl">
+					長年親しまれてきた競合「麻雀天聖（web-jong.com/game/tensei/）」の長所（軽快さ、登録不要、豊富なルール）を継承しつつ、現代プレイヤーが求める圧倒的品質でアップデートします。
+				</p>
+			</div>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				<!-- Item 1: Visuals & Responsiveness -->
+				<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-emerald-500/40 transition-colors">
+					<div class="w-12 h-12 rounded-xl bg-emerald-950 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold">
+						<Smartphone className="w-6 h-6" />
+					</div>
+					<h3 class="text-lg font-bold text-white">1. スマホ完全最適化 ＆ ベクター描画</h3>
+					<div class="space-y-2 text-xs">
+						<div class="p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 text-red-300">
+							<span class="font-bold">❌ 競合の課題:</span> 固定解像度Canvasのため、Retinaディスプレイや最新スマホで牌がぼやけ、ピンチズームが必要。
+						</div>
+						<div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+							<span class="font-bold">✨ 当サイトの改善:</span> 100% SVGベクター描画。4Kディスプレイでも一切ぼやけず、モバイル縦画面・横画面どちらにも完全レスポンシブ適応。
+						</div>
+					</div>
+				</div>
+
+				<!-- Item 2: Modern Dark Mode & Aesthetic -->
+				<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-emerald-500/40 transition-colors">
+					<div class="w-12 h-12 rounded-xl bg-cyan-950 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold">
+						<Shield className="w-6 h-6" />
+					</div>
+					<h3 class="text-lg font-bold text-white">2. 広告ゼロ ＆ 没入ダークモード</h3>
+					<div class="space-y-2 text-xs">
+						<div class="p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 text-red-300">
+							<span class="font-bold">❌ 競合の課題:</span> 画面周囲に点滅するバナー広告や誤タップを誘う配置が多く、対局への集中を阻害。
+						</div>
+						<div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+							<span class="font-bold">✨ 当サイトの改善:</span> クリーンで洗練された高級感あるダークモード＆エメラルド卓。誤操作を招く広告配置を排除。
+						</div>
+					</div>
+				</div>
+
+				<!-- Item 3: Smart AI Opponents -->
+				<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-emerald-500/40 transition-colors">
+					<div class="w-12 h-12 rounded-xl bg-purple-950 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold">
+						<Cpu className="w-6 h-6" />
+					</div>
+					<h3 class="text-lg font-bold text-white">3. 人間らしい押し引き思考AI</h3>
+					<div class="space-y-2 text-xs">
+						<div class="p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 text-red-300">
+							<span class="font-bold">❌ 競合の課題:</span> CPUの牌効率が画一的で、リーチに対して不自然なベタオリや不条理な見逃しが散見される。
+						</div>
+						<div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+							<span class="font-bold">✨ 当サイトの改善:</span> 電脳麻将・天鳳特化の思考ロジックを採用。初級〜最高峰まで自然で実戦的な相手と対戦可能。
+						</div>
+					</div>
+				</div>
+
+				<!-- Item 4: Instant Play & PWA -->
+				<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-emerald-500/40 transition-colors">
+					<div class="w-12 h-12 rounded-xl bg-amber-950 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold">
+						<Award className="w-6 h-6" />
+					</div>
+					<h3 class="text-lg font-bold text-white">4. 0秒起動 ＆ オフラインPWA</h3>
+					<div class="space-y-2 text-xs">
+						<div class="p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 text-red-300">
+							<span class="font-bold">❌ 競合の課題:</span> ページを開くたびに全アセットを再読込し、電波の悪い場所では動かない。
+						</div>
+						<div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+							<span class="font-bold">✨ 当サイトの改善:</span> Astroによる超高速静的生成とService Workerキャッシュ。地下鉄やオフラインでも即プレイ。
+						</div>
+					</div>
+				</div>
+
+				<!-- Item 5: Replay & Analytics -->
+				<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-emerald-500/40 transition-colors">
+					<div class="w-12 h-12 rounded-xl bg-blue-950 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold">
+						<BarChart3 className="w-6 h-6" />
+					</div>
+					<h3 class="text-lg font-bold text-white">5. 牌譜再生 ＆ グラフ戦績分析</h3>
+					<div class="space-y-2 text-xs">
+						<div class="p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 text-red-300">
+							<span class="font-bold">❌ 競合の課題:</span> グラフ描画が古く、局ごとの詳しい打牌ログ（牌譜）を1巡ずつ振り返ることができない。
+						</div>
+						<div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+							<span class="font-bold">✨ 当サイトの改善:</span> 点数推移グラフ、和了率・放銃率・立直率のレーダーチャート、1巡ごとの牌譜リプレイ・分岐シミュレータを実装可能。
+						</div>
+					</div>
+				</div>
+
+				<!-- Item 6: Multiplayer & Friend Links -->
+				<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-emerald-500/40 transition-colors">
+					<div class="w-12 h-12 rounded-xl bg-rose-950 border border-rose-500/30 flex items-center justify-center text-rose-400 font-bold">
+						<Users className="w-6 h-6" />
+					</div>
+					<h3 class="text-lg font-bold text-white">6. URL共有ですぐ遊べる友人戦</h3>
+					<div class="space-y-2 text-xs">
+						<div class="p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 text-red-300">
+							<span class="font-bold">❌ 競合の課題:</span> 完全CPU対戦専用で、友達とオンラインで遊ぶことができない。
+						</div>
+						<div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+							<span class="font-bold">✨ 当サイトの改善:</span> URLをLINEやDiscordでシェアするだけで即座に合流できる友人対局機能（足りない枠はCPUが自動参戦）。
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Rules and Settings Overview -->
+		<section id="rules" class="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 backdrop-blur-sm">
+			<h3 class="text-xl font-bold text-white mb-4">対応予定のルール設定（天聖互換 ＋ 競技ルール）</h3>
+			<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+				<div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+					<div class="text-slate-400">試合形式</div>
+					<div class="font-bold text-white mt-0.5">東風戦 / 東南戦</div>
+				</div>
+				<div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+					<div class="text-slate-400">人数形式</div>
+					<div class="font-bold text-white mt-0.5">四人麻雀 / 三人麻雀</div>
+				</div>
+				<div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+					<div class="text-slate-400">赤ドラ</div>
+					<div class="font-bold text-emerald-400 mt-0.5">あり（各1枚） / なし</div>
+				</div>
+				<div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+					<div class="text-slate-400">喰いタン</div>
+					<div class="font-bold text-emerald-400 mt-0.5">あり / なし</div>
+				</div>
+				<div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+					<div class="text-slate-400">トビ終了</div>
+					<div class="font-bold text-white mt-0.5">あり（ハコ割れ）</div>
+				</div>
+				<div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+					<div class="text-slate-400">CPU難易度</div>
+					<div class="font-bold text-purple-400 mt-0.5">初級 / 中級 / 上級 / 鬼神</div>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<!-- Site Footer -->
+	<SiteFooter />
 </Layout>

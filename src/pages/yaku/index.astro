@@ -1,0 +1,146 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import YakuEncyclopedia from '../../components/yaku/YakuEncyclopedia';
+import { BookOpen, Sparkles, Award, CheckCircle2, ChevronRight, Layers, Flame, Calculator } from 'lucide-react';
+---
+
+<Layout
+  lang="ja"
+  title="麻雀の役一覧【全役まとめ】1翻〜役満まで分かりやすく解説 | 麻雀web"
+  description="麻雀の全役を1翻役・2翻役・3翻役・6翻役・役満・ダブル役満まで完全網羅。門前役・鳴き（喰い下がり）の条件、成立手牌のSVG牌サンプル、実戦での狙い目と点数を初心者にも分かりやすく解説した決定版ガイドです。"
+>
+  <!-- Top Navigation -->
+  <SiteHeader activeNav="yaku" />
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+    <!-- Breadcrumbs -->
+    <nav class="flex items-center gap-2 text-xs text-slate-400">
+      <a href="/" class="hover:text-emerald-400 transition-colors">ホーム</a>
+      <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+      <span class="text-slate-200 font-semibold">役一覧ガイド</span>
+    </nav>
+
+    <!-- Hero Header -->
+    <section class="space-y-4 text-center max-w-3xl mx-auto pt-2">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+        <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
+        初心者から上級者まで完全対応・全38役リファレンス
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white font-['Zen_Maru_Gothic'] leading-tight">
+        麻雀 役一覧ガイド（全手牌サンプル付き）
+      </h1>
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+        1翻の基本役からロマン溢れる役満まで、全役の成立条件・門前/鳴き時の翻数・手牌サンプルを完全網羅。<br class="hidden sm:inline" />
+        牌をクリックして点数計算機ですぐに符・翻・点数の計算結果をシミュレーションできます。
+      </p>
+    </section>
+
+    <!-- Quick Stats Summary Cards -->
+    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl text-center space-y-1 shadow-lg">
+        <div class="text-[11px] text-slate-400 font-semibold">1翻役 (基本役)</div>
+        <div class="text-2xl font-black text-emerald-400 font-mono">15 <span class="text-xs font-normal text-slate-400">役</span></div>
+        <div class="text-[10px] text-slate-500">リーチ・タンヤオ・平和等</div>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl text-center space-y-1 shadow-lg">
+        <div class="text-[11px] text-slate-400 font-semibold">2翻役 (応用手役)</div>
+        <div class="text-2xl font-black text-cyan-400 font-mono">11 <span class="text-xs font-normal text-slate-400">役</span></div>
+        <div class="text-[10px] text-slate-500">三色同順・一通・トイトイ等</div>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl text-center space-y-1 shadow-lg">
+        <div class="text-[11px] text-slate-400 font-semibold">3翻役 (中堅打点)</div>
+        <div class="text-2xl font-black text-purple-400 font-mono">3 <span class="text-xs font-normal text-slate-400">役</span></div>
+        <div class="text-[10px] text-slate-500">混一色・純チャン・二盃口</div>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl text-center space-y-1 shadow-lg">
+        <div class="text-[11px] text-slate-400 font-semibold">6翻役 (大台跳満)</div>
+        <div class="text-2xl font-black text-pink-400 font-mono">1 <span class="text-xs font-normal text-slate-400">役</span></div>
+        <div class="text-[10px] text-slate-500">清一色（チンイツ）</div>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl text-center space-y-1 shadow-lg">
+        <div class="text-[11px] text-slate-400 font-semibold">役満 (最高峰)</div>
+        <div class="text-2xl font-black text-amber-400 font-mono">11 <span class="text-xs font-normal text-slate-400">役</span></div>
+        <div class="text-[10px] text-slate-500">国士無双・大三元・四暗刻等</div>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl text-center space-y-1 shadow-lg">
+        <div class="text-[11px] text-slate-400 font-semibold">ダブル役満</div>
+        <div class="text-2xl font-black text-rose-400 font-mono">4 <span class="text-xs font-normal text-slate-400">役</span></div>
+        <div class="text-[10px] text-slate-500">四暗刻単騎・国士13面等</div>
+      </div>
+    </section>
+
+    <!-- Interactive Yaku Encyclopedia Component -->
+    <section class="space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
+            <span class="w-2.5 h-6 rounded-full bg-emerald-500 inline-block"></span>
+            役辞典・絞り込み検索
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">
+            翻数別タブや「門前限定」「鳴きOK」「順子系」などの条件タグで目的の役を瞬時に検索できます。
+          </p>
+        </div>
+
+        <a
+          href="/calculator"
+          class="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md shadow-cyan-900/30 transition-all"
+        >
+          <Calculator className="w-4 h-4" />
+          点数計算機を使う
+        </a>
+      </div>
+
+      <YakuEncyclopedia client:load />
+    </section>
+
+    <!-- Beginner Strategy & Rules Guide (SEO Content) -->
+    <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-8">
+      <div class="border-b border-slate-800 pb-4">
+        <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-emerald-400" />
+          麻雀役をマスターするための3つの超重要ポイント
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-400 mt-1">
+          初心者が最初につまずきやすい「役なし」「喰い下がり」「門前役」の仕組みを分かりやすく整理しました。
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-slate-950/80 border border-slate-800/80 p-5 rounded-xl space-y-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 font-black flex items-center justify-center text-sm">
+            1
+          </div>
+          <h3 class="text-base font-bold text-white">「役なし」ではアガれない</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            麻雀は手牌を4面子1雀頭（3枚組×4＋頭2枚）に揃えるだけではアガれません。必ず最低「1翻以上の役」が1つ成立している必要があります。初心者はまず<strong class="text-emerald-400">「リーチ」「タンヤオ」「役牌」</strong>の3大基本役を軸に覚えましょう。
+          </p>
+        </div>
+
+        <div class="bg-slate-950/80 border border-slate-800/80 p-5 rounded-xl space-y-3">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 font-black flex items-center justify-center text-sm">
+            2
+          </div>
+          <h3 class="text-base font-bold text-white">「門前役」と「鳴き」の注意点</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            「平和（ピンフ）」「一盃口」「立直」「七対子」などはポンやチーをすると役そのものが消滅する<strong class="text-cyan-400">門前（メンゼン）限定役</strong>です。安易に鳴いてしまうと役なしになってアガれなくなるため、門前役を狙う時は鳴かないのが原則です。
+          </p>
+        </div>
+
+        <div class="bg-slate-950/80 border border-slate-800/80 p-5 rounded-xl space-y-3">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 font-black flex items-center justify-center text-sm">
+            3
+          </div>
+          <h3 class="text-base font-bold text-white">「喰い下がり」とは？</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            「三色同順」「一気通貫」「混一色」「清一色」などは鳴いても役は残りますが、翻数が1翻下がる<strong class="text-amber-400">「喰い下がり」</strong>になります。スピード重視で鳴いてアガりきるか、高打点を狙って門前で進めるかの判断が実戦の腕の見せ所です。
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>

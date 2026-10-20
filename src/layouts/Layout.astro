@@ -1,23 +1,69 @@
+---
+import '../styles/global.css';
+import { getLangFromUrl, getHreflangLinks, useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+	title?: string;
+	description?: string;
+	lang?: Lang;
+	canonical?: string;
+}
+
+const currentLang: Lang = Astro.props.lang || getLangFromUrl(Astro.url);
+const t = useTranslations(currentLang);
+
+const {
+	title = t('site.title'),
+	description = t('site.description'),
+	canonical,
+} = Astro.props;
+
+const siteUrl = Astro.site?.toString() || 'https://mahjong-game.com';
+const hreflangLinks = getHreflangLinks(Astro.url, siteUrl);
+const canonicalUrl = canonical || (hreflangLinks.find((l) => l.hreflang === currentLang)?.href ?? `${siteUrl}${Astro.url.pathname}`);
+---
+
 <!doctype html>
-<html lang="en">
+<html lang={currentLang}>
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<meta name="keywords" content={t('site.keywords')} />
+		<link rel="canonical" href={canonicalUrl} />
+
+		<!-- SEO Hreflang Multi-language tags -->
+		{hreflangLinks.map((item) => (
+			<link rel="alternate" hreflang={item.hreflang} href={item.href} />
+		))}
+
+		<!-- OpenGraph Meta Tags for Multi-language Social Sharing -->
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonicalUrl} />
+		<meta property="og:site_name" content="麻雀ゲーム.com / Mahjong-Game.com" />
+		<meta property="og:locale" content={currentLang === 'ja' ? 'ja_JP' : 'en_US'} />
+		<meta property="og:locale:alternate" content={currentLang === 'ja' ? 'en_US' : 'ja_JP'} />
+
+		<!-- Twitter Card -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+
+		<!-- Google Fonts for Multi-language Typography -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&family=Zen+Maru+Gothic:wght@500;700;900&display=swap"
+			rel="stylesheet"
+		/>
 	</head>
-	<body>
+	<body class="bg-[#090d12] text-slate-100 min-h-screen selection:bg-emerald-500 selection:text-white antialiased">
 		<slot />
 	</body>
 </html>
 
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>

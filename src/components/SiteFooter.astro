@@ -1,0 +1,51 @@
+---
+import LanguagePicker from './LanguagePicker.astro';
+---
+
+<footer class="border-t border-slate-800/80 bg-slate-950 py-12 text-center text-xs text-slate-500">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800/60 pb-6">
+      <div class="flex items-center gap-2 font-bold text-slate-300 text-sm">
+        <span>🀄 麻雀web</span>
+        <span>•</span>
+        <span>麻雀ゲーム.com</span>
+      </div>
+
+      <nav class="flex items-center gap-6 text-xs text-slate-400">
+        <a href="/" class="hover:text-emerald-400 transition-colors">オンライン対局</a>
+        <a href="/yaku" class="hover:text-emerald-400 transition-colors">役一覧ガイド</a>
+        <a href="/calculator" class="hover:text-emerald-400 transition-colors">点数計算シミュレーター</a>
+        <a href="/#rules" class="hover:text-emerald-400 transition-colors">ルール設定</a>
+      </nav>
+
+      <LanguagePicker variant="full" />
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left text-xs">
+      <div class="space-y-2">
+        <div class="font-bold text-slate-300">麻雀web について</div>
+        <p class="text-slate-400 leading-relaxed">
+          登録不要・完全無料で遊べるブラウザ麻雀ゲーム。電脳麻将エンジン（@kobalab/majiang-core）による本格AI対戦と、SVGベクター牌描画を提供します。
+        </p>
+      </div>
+      <div class="space-y-2">
+        <div class="font-bold text-slate-300">学習・ツール</div>
+        <ul class="space-y-1 text-slate-400">
+          <li><a href="/yaku" class="hover:text-emerald-400 transition-colors">・麻雀役一覧（1翻〜役満・全手牌サンプル付き）</a></li>
+          <li><a href="/calculator" class="hover:text-emerald-400 transition-colors">・点数計算シミュレーター（符・翻・点数授受詳細）</a></li>
+          <li><a href="/calculator" class="hover:text-emerald-400 transition-colors">・点数計算練習ドリル（クイズ形式で実戦力アップ）</a></li>
+        </ul>
+      </div>
+      <div class="space-y-2">
+        <div class="font-bold text-slate-300">対応ルール</div>
+        <p class="text-slate-400 leading-relaxed">
+          日本プロ麻雀連盟 / 天鳳互換ルール（25,000点持ち/30,000点返し、喰いタンあり、赤ドラ3枚、形式テンパイあり、切り上げ満貫あり）。
+        </p>
+      </div>
+    </div>
+
+    <div class="text-slate-600 border-t border-slate-900 pt-6">
+      © 2026 麻雀ゲーム.com All Rights Reserved.
+    </div>
+  </div>
+</footer>

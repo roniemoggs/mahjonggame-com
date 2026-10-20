@@ -1,0 +1,156 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import ScoreCalculator from '../../components/calculator/ScoreCalculator';
+import { Calculator, Sparkles, BookOpen, ChevronRight, Trophy, HelpCircle, Table } from 'lucide-react';
+---
+
+<Layout
+  lang="ja"
+  title="麻雀点数計算シミュレーター＆練習ドリル【符・翻・点数授受の自動計算】 | 麻雀web"
+  description="手牌14枚と和了条件（ツモ/ロン・自風・場風・リーチ・ドラ等）を選択するだけで、符・翻・成立役・親子の支払点数を瞬時に自動計算。点数計算ドリル（クイズ形式）で実戦的な符計算のトレーニングも可能です。"
+>
+  <!-- Top Navigation -->
+  <SiteHeader activeNav="calculator" />
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+    <!-- Breadcrumbs -->
+    <nav class="flex items-center gap-2 text-xs text-slate-400">
+      <a href="/" class="hover:text-emerald-400 transition-colors">ホーム</a>
+      <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+      <span class="text-slate-200 font-semibold">点数計算シミュレーター＆練習ドリル</span>
+    </nav>
+
+    <!-- Hero Header -->
+    <section class="space-y-4 text-center max-w-3xl mx-auto pt-2">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 text-xs font-semibold">
+        <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+        電脳麻将公式エンジン（@kobalab/majiang-core）完全準拠
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white font-['Zen_Maru_Gothic'] leading-tight">
+        麻雀点数計算シミュレーター
+      </h1>
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+        手牌14枚、和了牌、ツモ/ロン、自風・場風を選択するだけで、符数・翻数・成立役・支払点数をリアルタイムに算出。<br class="hidden sm:inline" />
+        クイズ形式の「点数計算練習ドリル」で、複雑な符計算も短期間でマスターできます。
+      </p>
+    </section>
+
+    <!-- Interactive Calculator & Practice Component -->
+    <section class="space-y-6">
+      <ScoreCalculator client:load />
+    </section>
+
+    <!-- Reference Section: Fu & Score Lookup Guide (SEO & Educational Reference) -->
+    <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-8">
+      <div class="border-b border-slate-800 pb-4">
+        <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+          <Table className="w-5 h-5 text-cyan-400" />
+          麻雀点数早見表 ＆ 符計算の基本まとめ
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-400 mt-1">
+          実戦で頻出する符数・翻数ごとの得点表（親・子・ロン・ツモ）を一覧で確認できます。
+        </p>
+      </div>
+
+      <!-- Score Matrix Grid -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left border-collapse border border-slate-800 rounded-xl overflow-hidden">
+          <thead>
+            <tr class="bg-slate-950 text-slate-300 border-b border-slate-800">
+              <th class="p-3 font-bold border-r border-slate-800">符数 / 翻数</th>
+              <th class="p-3 font-bold border-r border-slate-800">1翻</th>
+              <th class="p-3 font-bold border-r border-slate-800">2翻</th>
+              <th class="p-3 font-bold border-r border-slate-800">3翻</th>
+              <th class="p-3 font-bold">4翻</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 font-mono">
+            <tr class="hover:bg-slate-800/40 transition-colors">
+              <td class="p-3 font-sans font-bold text-emerald-400 bg-slate-950/60 border-r border-slate-800">
+                20符 (平和ツモ)
+              </td>
+              <td class="p-3 text-slate-500 border-r border-slate-800">なし</td>
+              <td class="p-3 text-white border-r border-slate-800">子 400・700 / 親 700∀</td>
+              <td class="p-3 text-white border-r border-slate-800">子 700・1300 / 親 1300∀</td>
+              <td class="p-3 text-white">子 1300・2600 / 親 2600∀</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40 transition-colors">
+              <td class="p-3 font-sans font-bold text-cyan-400 bg-slate-950/60 border-r border-slate-800">
+                25符 (七対子)
+              </td>
+              <td class="p-3 text-slate-500 border-r border-slate-800">なし</td>
+              <td class="p-3 text-white border-r border-slate-800">子 1600 / 親 2400</td>
+              <td class="p-3 text-white border-r border-slate-800">子 3200 / 親 4800</td>
+              <td class="p-3 text-white">子 6400 / 親 9600</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40 transition-colors">
+              <td class="p-3 font-sans font-bold text-slate-200 bg-slate-950/60 border-r border-slate-800">
+                30符 (基本形)
+              </td>
+              <td class="p-3 text-white border-r border-slate-800">子 1000 (300/500) / 親 1500 (500∀)</td>
+              <td class="p-3 text-white border-r border-slate-800">子 2000 (500/1000) / 親 2900 (1000∀)</td>
+              <td class="p-3 text-white border-r border-slate-800">子 3900 (1000/2000) / 親 5800 (2000∀)</td>
+              <td class="p-3 text-white">子 7700 (2000/3900) / 親 11600 (3900∀)</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40 transition-colors">
+              <td class="p-3 font-sans font-bold text-slate-200 bg-slate-950/60 border-r border-slate-800">
+                40符 (暗刻/メンゼンロン)
+              </td>
+              <td class="p-3 text-white border-r border-slate-800">子 1300 (400/700) / 親 2000 (700∀)</td>
+              <td class="p-3 text-white border-r border-slate-800">子 2600 (700/1300) / 親 3900 (1300∀)</td>
+              <td class="p-3 text-white border-r border-slate-800">子 5200 (1300/2600) / 親 7700 (2600∀)</td>
+              <td class="p-3 text-amber-300 font-bold">満貫 (8000 / 12000)</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40 transition-colors">
+              <td class="p-3 font-sans font-bold text-slate-200 bg-slate-950/60 border-r border-slate-800">
+                50符 (幺九暗刻等)
+              </td>
+              <td class="p-3 text-white border-r border-slate-800">子 1600 (400/800) / 親 2400 (800∀)</td>
+              <td class="p-3 text-white border-r border-slate-800">子 3200 (800/1600) / 親 4800 (1600∀)</td>
+              <td class="p-3 text-white border-r border-slate-800">子 6400 (1600/3200) / 親 9600 (3200∀)</td>
+              <td class="p-3 text-amber-300 font-bold">満貫 (8000 / 12000)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- High Hand Caps Summary -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
+        <div class="bg-slate-950/80 border border-emerald-500/30 p-3 rounded-xl space-y-0.5">
+          <div class="text-[11px] text-emerald-400 font-bold">満貫 (5翻)</div>
+          <div class="text-sm font-black text-white font-mono">子 8,000 / 親 12,000</div>
+          <div class="text-[10px] text-slate-400">ツモ: 2000・4000 / 4000∀</div>
+        </div>
+        <div class="bg-slate-950/80 border border-cyan-500/30 p-3 rounded-xl space-y-0.5">
+          <div class="text-[11px] text-cyan-400 font-bold">跳満 (6〜7翻)</div>
+          <div class="text-sm font-black text-white font-mono">子 12,000 / 親 18,000</div>
+          <div class="text-[10px] text-slate-400">ツモ: 3000・6000 / 6000∀</div>
+        </div>
+        <div class="bg-slate-950/80 border border-purple-500/30 p-3 rounded-xl space-y-0.5">
+          <div class="text-[11px] text-purple-400 font-bold">倍満 (8〜10翻)</div>
+          <div class="text-sm font-black text-white font-mono">子 16,000 / 親 24,000</div>
+          <div class="text-[10px] text-slate-400">ツモ: 4000・8000 / 8000∀</div>
+        </div>
+        <div class="bg-slate-950/80 border border-rose-500/30 p-3 rounded-xl space-y-0.5">
+          <div class="text-[11px] text-rose-400 font-bold">三倍満 (11〜12翻)</div>
+          <div class="text-sm font-black text-white font-mono">子 24,000 / 親 36,000</div>
+          <div class="text-[10px] text-slate-400">ツモ: 6000・12000 / 12000∀</div>
+        </div>
+        <div class="bg-slate-950/80 border border-amber-500/30 p-3 rounded-xl space-y-0.5">
+          <div class="text-[11px] text-amber-400 font-bold">役満 (13翻〜)</div>
+          <div class="text-sm font-black text-white font-mono">子 32,000 / 親 48,000</div>
+          <div class="text-[10px] text-slate-400">ツモ: 8000・16000 / 16000∀</div>
+        </div>
+        <div class="bg-slate-950/80 border border-amber-400/50 p-3 rounded-xl space-y-0.5 bg-gradient-to-br from-amber-950/40 to-slate-950">
+          <div class="text-[11px] text-amber-300 font-bold">ダブル役満</div>
+          <div class="text-sm font-black text-amber-200 font-mono">子 64,000 / 親 96,000</div>
+          <div class="text-[10px] text-amber-400/80">ツモ: 16000・32000 / 32000∀</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>

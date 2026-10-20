@@ -1,0 +1,91 @@
+---
+import LanguagePicker from './LanguagePicker.astro';
+import { Play } from 'lucide-react';
+
+interface Props {
+  activeNav?: 'game' | 'yaku' | 'calculator' | 'showcase';
+}
+
+const { activeNav } = Astro.props;
+---
+
+<header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <a href="/" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-900/30 font-bold text-white text-xl group-hover:scale-105 transition-transform">
+          🀄
+        </div>
+        <div>
+          <div class="text-lg font-black tracking-tight text-white group-hover:text-emerald-400 transition-colors">
+            麻雀web <span class="text-xs font-normal text-emerald-400 ml-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">無料オンライン麻雀</span>
+          </div>
+          <div class="text-[10px] text-slate-400 -mt-0.5 font-mono">麻雀ゲーム.com</div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Nav Links -->
+    <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+      <a
+        href="/"
+        class={`transition-colors ${
+          activeNav === 'game'
+            ? 'text-emerald-400 font-bold'
+            : 'text-slate-300 hover:text-emerald-400'
+        }`}
+      >
+        オンライン対局
+      </a>
+      <a
+        href="/yaku"
+        class={`transition-colors flex items-center gap-1.5 ${
+          activeNav === 'yaku'
+            ? 'text-emerald-400 font-bold'
+            : 'text-slate-300 hover:text-emerald-400'
+        }`}
+      >
+        <span>役一覧ガイド</span>
+        <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded-full border border-emerald-500/30">
+          全役
+        </span>
+      </a>
+      <a
+        href="/calculator"
+        class={`transition-colors flex items-center gap-1.5 ${
+          activeNav === 'calculator'
+            ? 'text-emerald-400 font-bold'
+            : 'text-slate-300 hover:text-emerald-400'
+        }`}
+      >
+        <span>点数計算機</span>
+        <span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.2 rounded-full border border-cyan-500/30">
+          練習ドリル
+        </span>
+      </a>
+      <a
+        href="/#showcase"
+        class={`transition-colors ${
+          activeNav === 'showcase'
+            ? 'text-emerald-400 font-bold'
+            : 'text-slate-300 hover:text-emerald-400'
+        }`}
+      >
+        牌検証
+      </a>
+    </nav>
+
+    <!-- Action Button & Language Picker -->
+    <div class="flex items-center gap-2.5 sm:gap-3">
+      <span class="hidden lg:inline-block text-xs text-slate-400">登録不要・即座に対局</span>
+      <LanguagePicker variant="compact" />
+      <a
+        href="/#game"
+        class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-900/30 transition-all hover:scale-105 active:scale-95"
+      >
+        <Play className="w-4 h-4 fill-current" />
+        対局開始
+      </a>
+    </div>
+  </div>
+</header>

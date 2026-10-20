@@ -1,0 +1,280 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import TileShowcase from '../../components/mahjong/TileShowcase';
+import MahjongTable from '../../components/mahjong/MahjongTable';
+import LanguagePicker from '../../components/LanguagePicker.astro';
+import { useTranslations } from '../../i18n/utils';
+import { Sparkles, Trophy, Shield, Cpu, Smartphone, BarChart3, Users, Play, Award } from 'lucide-react';
+
+const t = useTranslations('en');
+---
+
+<Layout
+	lang="en"
+	title={t('site.title')}
+	description={t('site.description')}
+>
+	<!-- Top Navigation Bar -->
+	<header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+			<div class="flex items-center gap-3">
+				<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-900/30 font-bold text-white text-xl">
+					🀄
+				</div>
+				<div>
+					<a href="/en/" class="text-lg font-black tracking-tight text-white hover:text-emerald-400 transition-colors">
+						{t('nav.brand')} <span class="text-xs font-normal text-emerald-400 ml-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">{t('nav.tagline')}</span>
+					</a>
+					<div class="text-[10px] text-slate-400 -mt-0.5 font-mono">mahjong-game.com</div>
+				</div>
+			</div>
+
+			<!-- Nav Links -->
+			<nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+				<a href="#game" class="hover:text-emerald-400 transition-colors font-bold text-emerald-400">Play Online</a>
+				<a href="/yaku" class="hover:text-emerald-400 transition-colors flex items-center gap-1">
+					<span>Yaku Guide</span>
+					<span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded-full border border-emerald-500/30">All Yaku</span>
+				</a>
+				<a href="/calculator" class="hover:text-emerald-400 transition-colors flex items-center gap-1">
+					<span>Calculator</span>
+					<span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.2 rounded-full border border-cyan-500/30">Drills</span>
+				</a>
+				<a href="#showcase" class="hover:text-emerald-400 transition-colors">{t('nav.showcase')}</a>
+				<a href="#comparison" class="hover:text-emerald-400 transition-colors">{t('nav.comparison')}</a>
+			</nav>
+
+			<!-- Action Button & Language Picker -->
+			<div class="flex items-center gap-2.5 sm:gap-3">
+				<span class="hidden lg:inline-block text-xs text-slate-400">{t('nav.noReg')}</span>
+				<LanguagePicker variant="compact" />
+				<a
+					href="#game"
+					class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-900/30 transition-all hover:scale-105 active:scale-95"
+				>
+					<Play className="w-4 h-4 fill-current" />
+					Play Game
+				</a>
+			</div>
+		</div>
+	</header>
+
+	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
+		<!-- Hero Section -->
+		<section class="text-center space-y-5 pt-4 pb-2">
+			<div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+				<Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
+				Official Cyber Mahjong Engine (@kobalab/majiang-core) Integrated
+			</div>
+			<h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+				{t('hero.title')}
+			</h1>
+			<p class="max-w-2xl mx-auto text-sm sm:text-base text-slate-300 leading-relaxed">
+				The timeless strategy of authentic Japanese Riichi Mahjong meets modern web engineering (Astro 5 + React 19 + Tailwind v4).<br class="hidden sm:inline" />
+				Featuring hyper-realistic ivory vector SVG tiles and an intuitive, mobile-optimized interface with AI opponents.
+			</p>
+		</section>
+
+		<!-- Interactive Riichi Mahjong Game Table -->
+		<section id="game" class="space-y-6">
+			<div class="flex items-center justify-between border-b border-slate-800 pb-4">
+				<div>
+					<h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
+						<span class="w-2.5 h-6 rounded-full bg-emerald-500 inline-block"></span>
+						AI Game Table (Powered by majiang-core)
+					</h2>
+					<p class="text-xs sm:text-sm text-slate-400 mt-1">
+						Standard Japanese rules: 25,000 pts starting / 30,000 return, 3 Red Fives, Open Tanyao, Atozuke, and Keishiki Tenpai enabled.
+					</p>
+				</div>
+			</div>
+
+			<!-- React Game Table Component -->
+			<MahjongTable client:only="react" lang="en" />
+		</section>
+
+		<!-- Interactive Tile Showcase Component -->
+		<section id="showcase" class="space-y-6">
+			<div class="flex items-center justify-between border-b border-slate-800 pb-4">
+				<div>
+					<h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
+						<span class="w-2.5 h-6 rounded-full bg-emerald-500 inline-block"></span>
+						{t('showcase.title')}
+					</h2>
+					<p class="text-xs sm:text-sm text-slate-400 mt-1">
+						{t('showcase.desc')}
+					</p>
+				</div>
+			</div>
+
+			<!-- React Hydrated Component (in English) -->
+			<TileShowcase client:load lang="en" />
+		</section>
+
+		<!-- Strategic Competitive Analysis & Features -->
+		<section id="comparison" class="space-y-8 pt-4">
+			<div class="border-b border-slate-800 pb-4">
+				<div class="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-amber-500/10 text-amber-300 text-xs font-bold border border-amber-500/20 mb-2">
+					<Trophy className="w-3.5 h-3.5" />
+					{t('comparison.badge')}
+				</div>
+				<h2 class="text-2xl font-bold text-white">
+					{t('comparison.title')}
+				</h2>
+				<p class="text-sm text-slate-400 mt-1">
+					{t('comparison.desc')}
+				</p>
+			</div>
+
+			<!-- Comparison Matrix Cards -->
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				<!-- Item 1: Display & Visuals -->
+				<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-emerald-500/40 transition-colors">
+					<div class="w-12 h-12 rounded-xl bg-emerald-950 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold">
+						<Smartphone className="w-6 h-6" />
+					</div>
+					<h3 class="text-lg font-bold text-white">{t('comparison.card1.title')}</h3>
+					<div class="space-y-2 text-xs">
+						<div class="p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 text-red-300">
+							{t('comparison.card1.issue')}
+						</div>
+						<div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+							{t('comparison.card1.solution')}
+						</div>
+					</div>
+				</div>
+
+				<!-- Item 2: Modern Clean Layout -->
+				<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-emerald-500/40 transition-colors">
+					<div class="w-12 h-12 rounded-xl bg-blue-950 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold">
+						<Shield className="w-6 h-6" />
+					</div>
+					<h3 class="text-lg font-bold text-white">{t('comparison.card2.title')}</h3>
+					<div class="space-y-2 text-xs">
+						<div class="p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 text-red-300">
+							{t('comparison.card2.issue')}
+						</div>
+						<div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+							{t('comparison.card2.solution')}
+						</div>
+					</div>
+				</div>
+
+				<!-- Item 3: AI & Assistance -->
+				<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-emerald-500/40 transition-colors">
+					<div class="w-12 h-12 rounded-xl bg-purple-950 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold">
+						<Cpu className="w-6 h-6" />
+					</div>
+					<h3 class="text-lg font-bold text-white">{t('comparison.card3.title')}</h3>
+					<div class="space-y-2 text-xs">
+						<div class="p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 text-red-300">
+							{t('comparison.card3.issue')}
+						</div>
+						<div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+							{t('comparison.card3.solution')}
+						</div>
+					</div>
+				</div>
+
+				<!-- Item 4: Game Modes & Sanma -->
+				<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-emerald-500/40 transition-colors">
+					<div class="w-12 h-12 rounded-xl bg-amber-950 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold">
+						<Award className="w-6 h-6" />
+					</div>
+					<h3 class="text-lg font-bold text-white">{t('comparison.card4.title')}</h3>
+					<div class="space-y-2 text-xs">
+						<div class="p-2.5 rounded-lg bg-slate-800/60 text-slate-300">
+							<span class="font-bold text-amber-300">{t('comparison.card4.issue')}</span>
+						</div>
+						<div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+							{t('comparison.card4.solution')}
+						</div>
+					</div>
+				</div>
+
+				<!-- Item 5: Analytics & Stats -->
+				<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-emerald-500/40 transition-colors">
+					<div class="w-12 h-12 rounded-xl bg-cyan-950 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold">
+						<BarChart3 className="w-6 h-6" />
+					</div>
+					<h3 class="text-lg font-bold text-white">{t('comparison.card5.title')}</h3>
+					<div class="space-y-2 text-xs">
+						<div class="p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 text-red-300">
+							{t('comparison.card5.issue')}
+						</div>
+						<div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+							{t('comparison.card5.solution')}
+						</div>
+					</div>
+				</div>
+
+				<!-- Item 6: Multiplayer & Friend Links -->
+				<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-emerald-500/40 transition-colors">
+					<div class="w-12 h-12 rounded-xl bg-rose-950 border border-rose-500/30 flex items-center justify-center text-rose-400 font-bold">
+						<Users className="w-6 h-6" />
+					</div>
+					<h3 class="text-lg font-bold text-white">{t('comparison.card6.title')}</h3>
+					<div class="space-y-2 text-xs">
+						<div class="p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 text-red-300">
+							{t('comparison.card6.issue')}
+						</div>
+						<div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+							{t('comparison.card6.solution')}
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Rules and Settings Overview -->
+		<section id="rules" class="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 backdrop-blur-sm">
+			<h3 class="text-xl font-bold text-white mb-4">{t('rules.title')}</h3>
+			<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+				<div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+					<div class="text-slate-400">{t('rules.matchType')}</div>
+					<div class="font-bold text-white mt-0.5">{t('rules.matchTypeVal')}</div>
+				</div>
+				<div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+					<div class="text-slate-400">{t('rules.playerType')}</div>
+					<div class="font-bold text-white mt-0.5">{t('rules.playerTypeVal')}</div>
+				</div>
+				<div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+					<div class="text-slate-400">{t('rules.redDora')}</div>
+					<div class="font-bold text-emerald-400 mt-0.5">{t('rules.redDoraVal')}</div>
+				</div>
+				<div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+					<div class="text-slate-400">{t('rules.kuitan')}</div>
+					<div class="font-bold text-emerald-400 mt-0.5">{t('rules.kuitanVal')}</div>
+				</div>
+				<div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+					<div class="text-slate-400">{t('rules.tobi')}</div>
+					<div class="font-bold text-white mt-0.5">{t('rules.tobiVal')}</div>
+				</div>
+				<div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+					<div class="text-slate-400">{t('rules.cpuDifficulty')}</div>
+					<div class="font-bold text-purple-400 mt-0.5">{t('rules.cpuDifficultyVal')}</div>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<!-- Footer -->
+	<footer class="border-t border-slate-800/80 bg-slate-950 py-10 text-center text-xs text-slate-500">
+		<div class="max-w-7xl mx-auto px-4 space-y-5">
+			<div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800/60 pb-6">
+				<div class="flex items-center gap-2 font-bold text-slate-300 text-sm">
+					<span>🀄 Mahjong Web</span>
+					<span>•</span>
+					<span>mahjong-game.com</span>
+				</div>
+				<LanguagePicker variant="full" />
+			</div>
+			<p class="max-w-2xl mx-auto">
+				{t('footer.desc')}
+			</p>
+			<div class="text-slate-600">
+				{t('footer.rights')}
+			</div>
+		</div>
+	</footer>
+</Layout>
