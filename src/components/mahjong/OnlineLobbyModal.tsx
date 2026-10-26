@@ -29,12 +29,17 @@ import type {
   MultiplayerRole,
   SeatName,
 } from '../../lib/mahjong/types';
+import {
+  formatSeatName,
+  useMahjongLanguage,
+  type MahjongLang,
+} from '../../lib/mahjong/i18n';
 
 interface OnlineLobbyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStartMultiplayer: (session: PeerMultiplayerSession) => void;
-  lang?: 'ja' | 'en';
+  lang?: MahjongLang;
 }
 
 const SEAT_ORDER: SeatName[] = ['東', '南', '西', '北'];
@@ -43,14 +48,21 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
   isOpen,
   onClose,
   onStartMultiplayer,
-  lang: _lang = 'ja',
+  lang: propLang,
 }) => {
+  const mahjongContext = useMahjongLanguage();
+  const lang: MahjongLang = propLang || mahjongContext.lang || 'ja';
+  const isEn = lang === 'en';
+
   const [tab, setTab] = useState<'quick' | 'private'>('quick');
   const [playerName, setPlayerName] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('mahjong_username') || 'プレイヤー';
+      return (
+        localStorage.getItem('mahjong_username') ||
+        (isEn ? 'Player' : 'プレイヤー')
+      );
     }
-    return 'プレイヤー';
+    return isEn ? 'Player' : 'プレイヤー';
   });
   const [gameMode, setGameMode] = useState<'tonpuu' | 'hanchan'>('tonpuu');
   const [privateRoomCode, setPrivateRoomCode] = useState<string>('');
@@ -309,14 +321,16 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-black text-lg text-white tracking-wide">
-                  オンライン対戦（4人麻雀）
+                  {isEn ? 'Online Multiplayer (4-Player)' : 'オンライン対戦（4人麻雀）'}
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[10px] font-bold text-emerald-300">
                   P2P WebRTC
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                登録不要・電脳麻将エンジンによるリアルタイム4人ネット対局
+                {isEn
+                  ? 'No registration needed · Real-time 4-player cyber mahjong engine'
+                  : '登録不要・電脳麻将エンジンによるリアルタイム4人ネット対局'}
               </p>
             </div>
           </div>
@@ -352,18 +366,21 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
               <div className="space-y-2">
                 <div className="text-sm font-black text-emerald-400 uppercase tracking-widest flex items-center justify-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  マッチング中
+                  {isEn ? 'Matchmaking' : 'マッチング中'}
                 </div>
 
                 <div className="text-2xl font-black text-white">
-                  対戦相手を探しています...{' '}
-                  <span className="text-emerald-300 font-mono">{playerCount}/4人</span>
+                  {isEn ? 'Searching for players... ' : '対戦相手を探しています... '}
+                  <span className="text-emerald-300 font-mono">
+                    {playerCount}/4 {isEn ? 'Players' : '人'}
+                  </span>
                 </div>
 
                 {/* 15-second countdown & progress */}
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300">
                   <Clock className="w-3.5 h-3.5 text-amber-400" />
-                  待機時間: <strong className="text-white">{queuedSeconds}秒</strong> / 15秒
+                  {isEn ? 'Wait Time:' : '待機時間:'}{' '}
+                  <strong className="text-white">{queuedSeconds}s</strong> / 15s
                 </div>
               </div>
 
@@ -371,8 +388,12 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
               <div className="max-w-md p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 text-left text-xs text-emerald-200/90 leading-relaxed flex items-start gap-2.5">
                 <Sparkles className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-white">自動AIボット参戦機能:</span>{' '}
-                  15秒経過しても4人に満たない場合は、不足席に電脳麻将AI（初級・中級・上級）が自動参戦し、待たずにすぐ対局が始まります。
+                  <span className="font-bold text-white">
+                    {isEn ? 'Auto AI Bot Fill:' : '自動AIボット参戦機能:'}
+                  </span>{' '}
+                  {isEn
+                    ? 'If 4 players are not found within 15 seconds, intelligent AI bots (Novice, Mid, Expert) will automatically join open seats so the game starts immediately.'
+                    : '15秒経過しても4人に満たない場合は、不足席に電脳麻将AI（初級・中級・上級）が自動参戦し、待たずにすぐ対局が始まります。'}
                 </div>
               </div>
 
@@ -384,10 +405,12 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                     className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                   >
                     <Bot className="w-4 h-4" />
-                    今すぐ残りをAIで埋めて対局開始
+                    {isEn ? 'Start Now: Fill Seats with AI' : '今すぐ残りをAIで埋めて対局開始'}
                   </button>
                   <span className="text-[11px] text-slate-400">
-                    友達が揃うのを待たずに即座に開始できます
+                    {isEn
+                      ? 'Start immediately without waiting for human players'
+                      : '友達が揃うのを待たずに即座に開始できます'}
                   </span>
                 </div>
               )}
@@ -397,7 +420,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                 onClick={handleCancelMatchmaking}
                 className="px-6 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all cursor-pointer"
               >
-                マッチングをキャンセル
+                {isEn ? 'Cancel Matchmaking' : 'マッチングをキャンセル'}
               </button>
             </div>
           ) : matchingState === 'matched' || matchingState === 'connecting' ? (
@@ -411,11 +434,15 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
 
               <div className="space-y-1">
                 <h4 className="text-2xl font-black text-white tracking-wide">
-                  対局が成立しました！
+                  {isEn ? 'Match Found!' : '対局が成立しました！'}
                 </h4>
                 <p className="text-xs text-emerald-300">
                   {matchingState === 'connecting'
-                    ? '卓権限とWebRTC P2P接続を確立中...'
+                    ? isEn
+                      ? 'Establishing P2P WebRTC session...'
+                      : '卓権限とWebRTC P2P接続を確立中...'
+                    : isEn
+                    ? 'Assigned seats (East, South, West, North)'
                     : '座席（東・南・西・北）を割り当てました'}
                 </p>
               </div>
@@ -432,7 +459,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                     }`}
                   >
                     <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-black text-amber-300">
-                      {SEAT_ORDER[idx]}
+                      {formatSeatName(SEAT_ORDER[idx], lang)}
                     </div>
                     <span className="font-bold text-xs text-white truncate max-w-[100px]">
                       {p.playerName}
@@ -444,7 +471,17 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                           : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                       }`}
                     >
-                      {p.isHuman ? (p.role === 'host' ? 'ホスト (卓主)' : '人間') : 'AIボット'}
+                      {p.isHuman
+                        ? p.role === 'host'
+                          ? isEn
+                            ? 'Host'
+                            : 'ホスト (卓主)'
+                          : isEn
+                          ? 'Human'
+                          : '人間'
+                        : isEn
+                        ? 'AI Bot'
+                        : 'AIボット'}
                     </span>
                   </div>
                 ))}
@@ -452,7 +489,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
 
               <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
                 <RotateCw className="w-3.5 h-3.5 animate-spin text-emerald-400" />
-                対局卓へ移動中...
+                {isEn ? 'Connecting to game table...' : '対局卓へ移動中...'}
               </div>
             </div>
           ) : (
@@ -471,7 +508,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                   }`}
                 >
                   <Swords className="w-3.5 h-3.5" />
-                  クイック対戦
+                  {isEn ? 'Quick Match' : 'クイック対戦'}
                 </button>
                 <button
                   onClick={() => setTab('private')}
@@ -482,7 +519,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                   }`}
                 >
                   <KeyRound className="w-3.5 h-3.5" />
-                  合言葉で友達と対局
+                  {isEn ? 'Private Room' : '合言葉で友達と対局'}
                 </button>
               </div>
 
@@ -490,14 +527,14 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-emerald-400" />
-                  プレイヤー名
+                  {isEn ? 'Player Name' : 'プレイヤー名'}
                 </label>
                 <input
                   type="text"
                   maxLength={12}
                   value={playerName}
                   onChange={handleNameChange}
-                  placeholder="プレイヤー"
+                  placeholder={isEn ? 'Player' : 'プレイヤー'}
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-500 focus:outline-none text-white text-sm font-medium transition-colors"
                 />
               </div>
@@ -506,7 +543,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                  対局方式（ゲームモード）
+                  {isEn ? 'Game Mode' : '対局方式（ゲームモード）'}
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -517,8 +554,12 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                         : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
                     }`}
                   >
-                    <div className="font-bold text-sm text-white">東風戦（トンプウ）</div>
-                    <div className="text-[11px] text-slate-400 mt-0.5">約10分・手軽に対戦</div>
+                    <div className="font-bold text-sm text-white">
+                      {isEn ? 'East Round (Tonpuu)' : '東風戦（トンプウ）'}
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">
+                      {isEn ? '~10 min · Fast & casual' : '約10分・手軽に対戦'}
+                    </div>
                   </button>
 
                   <button
@@ -529,8 +570,12 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                         : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
                     }`}
                   >
-                    <div className="font-bold text-sm text-white">半荘戦（ハンチャン）</div>
-                    <div className="text-[11px] text-slate-400 mt-0.5">約20分・本格日本ルール</div>
+                    <div className="font-bold text-sm text-white">
+                      {isEn ? 'Full Match (Hanchan)' : '半荘戦（ハンチャン）'}
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">
+                      {isEn ? '~20 min · Full Japanese rules' : '約20分・本格日本ルール'}
+                    </div>
                   </button>
                 </div>
               </div>
@@ -541,7 +586,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                   <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-                      合言葉（部屋コード）
+                      {isEn ? 'Passcode / Room Code' : '合言葉（部屋コード）'}
                     </span>
                     <button
                       type="button"
@@ -550,7 +595,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                       }
                       className="text-[11px] text-emerald-400 hover:underline cursor-pointer"
                     >
-                      ランダム生成
+                      {isEn ? 'Generate Random' : 'ランダム生成'}
                     </button>
                   </label>
                   <div className="flex items-center gap-2">
@@ -559,26 +604,30 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                       maxLength={10}
                       value={privateRoomCode}
                       onChange={(e) => setPrivateRoomCode(e.target.value.toUpperCase())}
-                      placeholder="例: 7777, TOKYO"
+                      placeholder={isEn ? 'e.g., 7777, TOKYO' : '例: 7777, TOKYO'}
                       className="flex-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-emerald-500 focus:outline-none text-white text-sm font-mono tracking-wider uppercase font-bold"
                     />
                     {privateRoomCode && (
                       <button
                         onClick={copyInviteLink}
                         className="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
-                        title="友達招待リンクをコピー"
+                        title={isEn ? 'Copy invite link' : '友達招待リンクをコピー'}
                       >
                         {copiedCode ? (
                           <Check className="w-4 h-4 text-emerald-400" />
                         ) : (
                           <Share2 className="w-4 h-4" />
                         )}
-                        <span className="hidden sm:inline">招待リンク</span>
+                        <span className="hidden sm:inline">
+                          {isEn ? 'Invite Link' : '招待リンク'}
+                        </span>
                       </button>
                     )}
                   </div>
                   <p className="text-[11px] text-slate-400 leading-normal">
-                    同じ合言葉を入力した友達同士で同じ卓にマッチングされます。4人揃うか、残りをAIで埋めて対局できます。
+                    {isEn
+                      ? 'Players entering the same code match together. If needed, open seats can be filled with AI bots.'
+                      : '同じ合言葉を入力した友達同士で同じ卓にマッチングされます。4人揃うか、残りをAIで埋めて対局できます。'}
                   </p>
                 </div>
               )}
@@ -602,7 +651,13 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                 }`}
               >
                 <Play className="w-4 h-4 fill-current" />
-                {tab === 'quick' ? 'クイック対戦を開始する' : '合言葉で部屋に入る / 作成する'}
+                {tab === 'quick'
+                  ? isEn
+                    ? 'Start Quick Match'
+                    : 'クイック対戦を開始する'
+                  : isEn
+                  ? 'Join / Create Private Room'
+                  : '合言葉で部屋に入る / 作成する'}
               </button>
             </div>
           )}
@@ -612,9 +667,11 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
         <div className="px-6 py-3 bg-slate-900/60 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            配牌・自摸牌暗号化 / 覗き見防止仕様
+            {isEn
+              ? 'Hand & Draw Encryption / Anti-Peeking Active'
+              : '配牌・自摸牌暗号化 / 覗き見防止仕様'}
           </span>
-          <span>卓権限: スター型ホスト統括</span>
+          <span>{isEn ? 'Table Authority: Star Host' : '卓権限: スター型ホスト統括'}</span>
         </div>
       </div>
     </div>

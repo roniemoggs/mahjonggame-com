@@ -78,6 +78,7 @@ export class CpuPlayer extends MajiangAI {
   public readonly profile: CpuProfile;
   private _delayMs: number = 800; // Configurable delay (default 800ms: within 600ms - 1000ms)
   private _activeTimeout: ReturnType<typeof setTimeout> | null = null;
+  private _failsafeTimeout: ReturnType<typeof setTimeout> | null = null;
   private _isPaused: boolean = false;
   private _pendingCallback: ((reply?: any) => void) | null = null;
   private _pendingReply: any = null;
@@ -99,10 +100,7 @@ export class CpuPlayer extends MajiangAI {
 
   public pause(): void {
     this._isPaused = true;
-    if (this._activeTimeout) {
-      clearTimeout(this._activeTimeout);
-      this._activeTimeout = null;
-    }
+    this._clearTimers();
   }
 
   public resume(): void {
@@ -114,67 +112,159 @@ export class CpuPlayer extends MajiangAI {
       this._pendingCallback = null;
       this._pendingReply = null;
       this._notifyThinking(false);
-      cb(reply);
+      try {
+        cb(reply);
+      } catch (err) {
+        console.error(`[CpuPlayer ${this.seat}] Error on resume callback:`, err);
+      }
     }
   }
 
   public stop(): void {
     this._isPaused = false;
-    if (this._activeTimeout) {
-      clearTimeout(this._activeTimeout);
-      this._activeTimeout = null;
-    }
+    this._clearTimers();
     this._pendingCallback = null;
     this._pendingReply = null;
     this._notifyThinking(false);
   }
 
-  private _notifyThinking(isThinking: boolean): void {
-    if (this._onThinkingChange) {
-      this._onThinkingChange(isThinking);
+  private _clearTimers(): void {
+    if (this._activeTimeout) {
+      clearTimeout(this._activeTimeout);
+      this._activeTimeout = null;
+    }
+    if (this._failsafeTimeout) {
+      clearTimeout(this._failsafeTimeout);
+      this._failsafeTimeout = null;
     }
   }
 
+  private _notifyThinking(isThinking: boolean): void {
+    if (this._onThinkingChange) {
+      try {
+        this._onThinkingChange(isThinking);
+      } catch {}
+    }
+  }
+
+  /**
+   * Forces execution of any pending callback if the AI was delayed or stalled.
+   * Returns true if a pending action was flushed.
+   */
+  public forceFlushPendingAction(): boolean {
+    if (this._pendingCallback && this._pendingReply !== null) {
+      const cb = this._pendingCallback;
+      const reply = this._pendingReply;
+      this._pendingCallback = null;
+      this._pendingReply = null;
+      this._clearTimers();
+      this._notifyThinking(false);
+      try {
+        cb(reply);
+      } catch (err) {
+        console.error(`[CpuPlayer ${this.seat}] forceFlushPendingAction error:`, err);
+      }
+      return true;
+    }
+
+    if (this._activeTimeout || this._failsafeTimeout) {
+      this._clearTimers();
+      this._notifyThinking(false);
+      const cb = this._callback;
+      this._callback = undefined;
+      if (cb) {
+        const fallbackDapai = this.safeSelectDapai();
+        try {
+          cb(fallbackDapai ? { dapai: fallbackDapai } : {});
+        } catch (err) {
+          console.error(`[CpuPlayer ${this.seat}] forceFlushPendingAction callback error:`, err);
+        }
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private _safeCallback(reply?: any): void {
+    this._clearTimers();
+    this._notifyThinking(false);
+    const cb = this._callback;
+    this._callback = undefined;
+    if (cb) {
+      try {
+        cb(reply || {});
+      } catch (err) {
+        console.error(`[CpuPlayer ${this.seat}] _safeCallback error:`, err);
+      }
+    }
+  }
+
+  /**
+   * Safe wrapper around select_dapai that never crashes or throws.
+   */
+  public safeSelectDapai(info?: any[]): string {
+    try {
+      const d = this.select_dapai(info);
+      if (d) return d;
+    } catch (err) {
+      console.error(`[CpuPlayer ${this.seat}] select_dapai threw, falling back:`, err);
+    }
+
+    try {
+      const legal = this.get_dapai(this.shoupai);
+      if (legal && legal.length > 0) {
+        return legal[0];
+      }
+    } catch {}
+
+    return '';
+  }
+
   // ==========================================================================
-  // ACTION HANDLERS WITH HUMANIZED TIMING
+  // ACTION HANDLERS WITH HUMANIZED TIMING & BULLETPROOF FAILSAFES
   // ==========================================================================
 
   public action_zimo(zimo: any, gangzimo?: boolean): void {
     // If not this CPU's turn, respond immediately with empty action
     if (zimo.l !== this._menfeng) {
-      if (this._callback) this._callback();
+      this._safeCallback();
       return;
     }
 
-    // Determine the AI's decision
-    let reply: any;
-    let m: string | undefined;
-
-    if (this.select_hule(null, gangzimo)) {
-      reply = { hule: '-' };
-    } else if (this.select_pingju()) {
-      reply = { daopai: '-' };
-    } else if ((m = this.select_gang())) {
-      reply = { gang: m };
-    } else {
-      reply = { dapai: this.select_dapai() };
+    // Determine the AI's decision safely
+    let reply: any = {};
+    try {
+      let m: string | undefined;
+      if (this.select_hule(null, gangzimo)) {
+        reply = { hule: '-' };
+      } else if (this.select_pingju()) {
+        reply = { daopai: '-' };
+      } else if ((m = this.select_gang())) {
+        reply = { gang: m };
+      } else {
+        reply = { dapai: this.safeSelectDapai() };
+      }
+    } catch (err) {
+      console.error(`[CpuPlayer ${this.seat}] action_zimo decision error:`, err);
+      reply = { dapai: this.safeSelectDapai() };
     }
 
     this._notifyThinking(true);
 
-    // Calculate natural humanized delay: e.g. base 800ms +/- 120ms (range: 680ms - 920ms)
+    // Calculate natural humanized delay: e.g. base 800ms +/- 120ms (range: 150ms - 1500ms max)
     const jitter = (Math.random() - 0.5) * 240;
-    const actualDelay = Math.max(120, Math.round(this._delayMs + jitter));
+    const actualDelay = Math.min(1500, Math.max(120, Math.round(this._delayMs + jitter)));
 
     const executeReply = () => {
-      this._activeTimeout = null;
+      this._clearTimers();
       this._notifyThinking(false);
       if (this._onAction && reply.dapai) {
-        this._onAction('dapai', { seat: this.seat, dapai: reply.dapai });
+        try {
+          this._onAction('dapai', { seat: this.seat, dapai: reply.dapai });
+        } catch {}
       }
-      if (this._callback) {
-        this._callback(reply);
-      }
+      this._safeCallback(reply);
     };
 
     if (this._isPaused) {
@@ -183,74 +273,100 @@ export class CpuPlayer extends MajiangAI {
       return;
     }
 
+    this._clearTimers();
     this._activeTimeout = setTimeout(executeReply, actualDelay);
+
+    // Hard failsafe: if browser throttling delays activeTimeout beyond 3000ms, force execute
+    this._failsafeTimeout = setTimeout(() => {
+      console.warn(`[CpuPlayer ${this.seat}] action_zimo failsafe timeout fired (force executing).`);
+      executeReply();
+    }, Math.max(2500, actualDelay + 1000));
   }
 
   public action_dapai(dapai: any): void {
     // Own discard: check if Riichi declaration completion
     if (dapai.l === this._menfeng) {
-      if (this.select_daopai()) {
-        if (this._callback) this._callback({ daopai: '-' });
-      } else {
-        if (this._callback) this._callback();
+      try {
+        if (this.select_daopai()) {
+          this._safeCallback({ daopai: '-' });
+        } else {
+          this._safeCallback();
+        }
+      } catch {
+        this._safeCallback();
       }
       return;
     }
 
     // Opponent discarded: evaluate Ron or Call (Chi / Pon / Kan)
-    let m: string | undefined;
+    try {
+      let m: string | undefined;
 
-    if (this.select_hule(dapai)) {
-      // Ron call: brief dramatic pause (300ms)
-      this._notifyThinking(true);
-      const delay = Math.min(350, Math.round(this._delayMs * 0.4));
-      this._activeTimeout = setTimeout(() => {
-        this._activeTimeout = null;
-        this._notifyThinking(false);
-        if (this._callback) this._callback({ hule: '-' });
-      }, delay);
-      return;
-    } else if ((m = this.select_fulou(dapai))) {
-      // Pon / Chi call: slight reaction pause (300ms)
-      this._notifyThinking(true);
-      const delay = Math.min(350, Math.round(this._delayMs * 0.4));
-      this._activeTimeout = setTimeout(() => {
-        this._activeTimeout = null;
-        this._notifyThinking(false);
-        if (this._callback) this._callback({ fulou: m });
-      }, delay);
-      return;
-    } else if (this.select_daopai()) {
-      if (this._callback) this._callback({ daopai: '-' });
-      return;
-    } else {
-      // Passed: reply immediately so flow is never stalled when not calling
-      if (this._callback) this._callback();
+      if (this.select_hule(dapai)) {
+        // Ron call: brief dramatic pause (300ms)
+        this._notifyThinking(true);
+        const delay = Math.min(350, Math.round(this._delayMs * 0.4));
+        this._clearTimers();
+        this._activeTimeout = setTimeout(() => {
+          this._safeCallback({ hule: '-' });
+        }, delay);
+        this._failsafeTimeout = setTimeout(() => {
+          this._safeCallback({ hule: '-' });
+        }, 1500);
+        return;
+      } else if ((m = this.select_fulou(dapai))) {
+        // Pon / Chi call: slight reaction pause (300ms)
+        this._notifyThinking(true);
+        const delay = Math.min(350, Math.round(this._delayMs * 0.4));
+        this._clearTimers();
+        this._activeTimeout = setTimeout(() => {
+          this._safeCallback({ fulou: m });
+        }, delay);
+        this._failsafeTimeout = setTimeout(() => {
+          this._safeCallback({ fulou: m });
+        }, 1500);
+        return;
+      } else if (this.select_daopai()) {
+        this._safeCallback({ daopai: '-' });
+        return;
+      } else {
+        // Passed: reply immediately so flow is never stalled when not calling
+        this._safeCallback();
+      }
+    } catch (err) {
+      console.error(`[CpuPlayer ${this.seat}] action_dapai error, auto-passing:`, err);
+      this._safeCallback();
     }
   }
 
   public action_fulou(fulou: any): void {
     if (fulou.l !== this._menfeng) {
-      if (this._callback) this._callback();
+      this._safeCallback();
       return;
     }
     // If Daiminkan, turn continues automatically
     if (fulou.m.match(/^[mpsz]\d{4}/)) {
-      if (this._callback) this._callback();
+      this._safeCallback();
       return;
     }
 
     // CPU called Chi or Pon: needs to discard a tile
-    const dapai = this.select_dapai();
+    let dapai = '';
+    try {
+      dapai = this.safeSelectDapai();
+    } catch {
+      dapai = this.get_dapai(this.shoupai)?.[0] || '';
+    }
+
     this._notifyThinking(true);
 
     const jitter = (Math.random() - 0.5) * 150;
-    const actualDelay = Math.max(120, Math.round(this._delayMs * 0.8 + jitter));
+    const actualDelay = Math.min(1500, Math.max(120, Math.round(this._delayMs * 0.8 + jitter)));
 
     const executeReply = () => {
-      this._activeTimeout = null;
+      this._clearTimers();
       this._notifyThinking(false);
-      if (this._callback) this._callback({ dapai });
+      this._safeCallback({ dapai });
     };
 
     if (this._isPaused) {
@@ -259,7 +375,14 @@ export class CpuPlayer extends MajiangAI {
       return;
     }
 
+    this._clearTimers();
     this._activeTimeout = setTimeout(executeReply, actualDelay);
+
+    // Hard failsafe for fulou discard
+    this._failsafeTimeout = setTimeout(() => {
+      console.warn(`[CpuPlayer ${this.seat}] action_fulou failsafe timeout fired (force executing).`);
+      executeReply();
+    }, Math.max(2500, actualDelay + 1000));
   }
 
   // ==========================================================================

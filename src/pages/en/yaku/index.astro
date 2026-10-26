@@ -1,0 +1,146 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import SiteHeader from '../../../components/SiteHeader.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import YakuEncyclopedia from '../../../components/yaku/YakuEncyclopedia';
+import { BookOpen, Sparkles, ChevronRight, Calculator } from 'lucide-react';
+---
+
+<Layout
+  lang="en"
+  title="All Japanese Riichi Mahjong Yaku Guide (1 Han to Yakuman) | Mahjong Web"
+  description="Comprehensive Japanese Riichi Mahjong Yaku Guide covering all 38 Yaku: 1 Han, 2 Han, 3 Han, 6 Han, Yakuman, and Double Yakuman with vector SVG hand samples, concealed vs open conditions, and strategic pro tips."
+>
+  <!-- Top Navigation -->
+  <SiteHeader activeNav="yaku" lang="en" />
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+    <!-- Breadcrumbs -->
+    <nav class="flex items-center gap-2 text-xs text-slate-400">
+      <a href="/en/" class="hover:text-emerald-400 transition-colors">Home</a>
+      <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+      <span class="text-slate-200 font-semibold">Yaku Encyclopedia Guide</span>
+    </nav>
+
+    <!-- Hero Header -->
+    <section class="space-y-4 text-center max-w-3xl mx-auto pt-2">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+        <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
+        Complete Reference for Beginners & Advanced Players • All 38 Yaku
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white font-['Outfit',sans-serif] leading-tight">
+        Riichi Mahjong Yaku Guide
+      </h1>
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+        From fundamental 1-Han hands to legendary Yakuman miracles. Complete conditions, concealed/open values, and sample tile diagrams for every Yaku.<br class="hidden sm:inline" />
+        Click any hand to test Fu, Han, and payment distributions immediately in the interactive Score Calculator.
+      </p>
+    </section>
+
+    <!-- Quick Stats Summary Cards -->
+    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl text-center space-y-1 shadow-lg">
+        <div class="text-[11px] text-slate-400 font-semibold">1 Han (Basic)</div>
+        <div class="text-2xl font-black text-emerald-400 font-mono">15 <span class="text-xs font-normal text-slate-400">Yaku</span></div>
+        <div class="text-[10px] text-slate-500">Riichi, Tanyao, Pinfu...</div>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl text-center space-y-1 shadow-lg">
+        <div class="text-[11px] text-slate-400 font-semibold">2 Han (Intermediate)</div>
+        <div class="text-2xl font-black text-cyan-400 font-mono">11 <span class="text-xs font-normal text-slate-400">Yaku</span></div>
+        <div class="text-[10px] text-slate-500">Sanshoku, Ittsu, Toitoi...</div>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl text-center space-y-1 shadow-lg">
+        <div class="text-[11px] text-slate-400 font-semibold">3 Han (High-Value)</div>
+        <div class="text-2xl font-black text-purple-400 font-mono">3 <span class="text-xs font-normal text-slate-400">Yaku</span></div>
+        <div class="text-[10px] text-slate-500">Honitsu, Junchan, Ryanpeikou</div>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl text-center space-y-1 shadow-lg">
+        <div class="text-[11px] text-slate-400 font-semibold">6 Han (Haneman)</div>
+        <div class="text-2xl font-black text-pink-400 font-mono">1 <span class="text-xs font-normal text-slate-400">Yaku</span></div>
+        <div class="text-[10px] text-slate-500">Chinitsu (Full Flush)</div>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl text-center space-y-1 shadow-lg">
+        <div class="text-[11px] text-slate-400 font-semibold">Yakuman</div>
+        <div class="text-2xl font-black text-amber-400 font-mono">11 <span class="text-xs font-normal text-slate-400">Yaku</span></div>
+        <div class="text-[10px] text-slate-500">Kokushi, Daisangen, Suuankou...</div>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl text-center space-y-1 shadow-lg">
+        <div class="text-[11px] text-slate-400 font-semibold">Double Yakuman</div>
+        <div class="text-2xl font-black text-rose-400 font-mono">4 <span class="text-xs font-normal text-slate-400">Yaku</span></div>
+        <div class="text-[10px] text-slate-500">Suuankou Tanki, Kokushi 13...</div>
+      </div>
+    </section>
+
+    <!-- Interactive Yaku Encyclopedia Component -->
+    <section class="space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
+            <span class="w-2.5 h-6 rounded-full bg-emerald-500 inline-block"></span>
+            Yaku Directory & Search Filter
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">
+            Filter by Han value, concealed-only conditions, sequences, triplets, or search by English or Japanese names.
+          </p>
+        </div>
+
+        <a
+          href="/en/calculator"
+          class="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md shadow-cyan-900/30 transition-all"
+        >
+          <Calculator className="w-4 h-4" />
+          Open Score Calculator
+        </a>
+      </div>
+
+      <YakuEncyclopedia client:load lang="en" />
+    </section>
+
+    <!-- Beginner Strategy & Rules Guide (Educational Reference) -->
+    <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-8">
+      <div class="border-b border-slate-800 pb-4">
+        <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-emerald-400" />
+          3 Golden Rules of Japanese Riichi Mahjong Yaku
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-400 mt-1">
+          Essential concepts every beginner needs to understand before calling tiles.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-slate-950/80 border border-slate-800/80 p-5 rounded-xl space-y-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 font-black flex items-center justify-center text-sm">
+            1
+          </div>
+          <h3 class="text-base font-bold text-white">No Yaku = Cannot Win</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            In Riichi Mahjong, merely assembling 4 melds and 1 pair (14 tiles) is not enough to declare a win! You must have at least one valid Yaku (1 Han or more). Beginners should prioritize the big three fundamental Yaku: <strong class="text-emerald-400">Riichi, Tanyao (All Simples), and Yakuhai (Value Honors)</strong>.
+          </p>
+        </div>
+
+        <div class="bg-slate-950/80 border border-slate-800/80 p-5 rounded-xl space-y-3">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 font-black flex items-center justify-center text-sm">
+            2
+          </div>
+          <h3 class="text-base font-bold text-white">Menzen-Only (Concealed Hands)</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Yaku such as <strong class="text-cyan-400">Pinfu, Iipeikou, Riichi, and Chiitoitsu (Seven Pairs)</strong> can ONLY be achieved with a concealed hand. The moment you open your hand by calling Pon or Chi, these Yaku become completely invalid. When in doubt, stay concealed!
+          </p>
+        </div>
+
+        <div class="bg-slate-950/80 border border-slate-800/80 p-5 rounded-xl space-y-3">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 font-black flex items-center justify-center text-sm">
+            3
+          </div>
+          <h3 class="text-base font-bold text-white">What is "Kuisagari"?</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Hands like <strong class="text-amber-400">Sanshoku (Three Color Straight), Ittsu (Straight), Honitsu (Half Flush), and Chinitsu (Full Flush)</strong> can still be won when open, but their value is reduced by 1 Han (known as <em>Kuisagari</em>). Balance the speed of opening your hand against the scoring loss.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter lang="en" />
+</Layout>

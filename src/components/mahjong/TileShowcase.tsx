@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { MahjongTile, type TileSize } from './MahjongTile';
 import { Eye, EyeOff, RotateCw, Sparkles, Info } from 'lucide-react';
+import { MahjongLanguageContext, type MahjongLang } from '../../lib/mahjong/i18n';
 
 export interface TileShowcaseProps {
-  lang?: 'ja' | 'en';
+  lang?: MahjongLang;
 }
 
 export const TileShowcase: React.FC<TileShowcaseProps> = ({ lang = 'ja' }) => {
@@ -69,7 +70,8 @@ export const TileShowcase: React.FC<TileShowcaseProps> = ({ lang = 'ja' }) => {
   };
 
   return (
-    <div className="space-y-10">
+    <MahjongLanguageContext.Provider value={{ lang, showIndices: isEn, setShowIndices: () => {} }}>
+      <div className="space-y-10">
       {/* Control Bar */}
       <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
@@ -394,6 +396,7 @@ export const TileShowcase: React.FC<TileShowcaseProps> = ({ lang = 'ja' }) => {
         </div>
       )}
     </div>
+    </MahjongLanguageContext.Provider>
   );
 };
 

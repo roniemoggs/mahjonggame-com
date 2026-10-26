@@ -1,4 +1,11 @@
 import React from 'react';
+import {
+  useMahjongLanguage,
+  TILE_NAMES_EN,
+  TILE_NAMES_JA,
+  TILE_WESTERN_INDEX,
+  type MahjongLang,
+} from '../../lib/mahjong/i18n';
 
 export type TileSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -11,19 +18,9 @@ export interface MahjongTileProps {
   onClick?: () => void;
   className?: string;
   selected?: boolean;
+  lang?: MahjongLang;
+  showIndices?: boolean; // When true or in English mode, display corner Arabic numbers / Latin letters
 }
-
-// Map tile codes to Japanese readable names for accessibility and tooltips
-const TILE_NAMES: Record<string, string> = {
-  '1m': '一萬', '2m': '二萬', '3m': '三萬', '4m': '四萬', '5m': '五萬',
-  '6m': '六萬', '7m': '七萬', '8m': '八萬', '9m': '九萬', '0m': '赤五萬',
-  '1p': '一筒', '2p': '二筒', '3p': '三筒', '4p': '四筒', '5p': '五筒',
-  '6p': '六筒', '7p': '七筒', '8p': '八筒', '9p': '九筒', '0p': '赤五筒',
-  '1s': '一索', '2s': '二索', '3s': '三索', '4s': '四索', '5s': '五索',
-  '6s': '六索', '7s': '七索', '8s': '八索', '9s': '九索', '0s': '赤五索',
-  '1z': '東', '2z': '南', '3z': '西', '4z': '北',
-  '5z': '白', '6z': '發', '7z': '中',
-};
 
 const KANJI_NUMERALS: Record<number, string> = {
   1: '一', 2: '二', 3: '三', 4: '四', 5: '五',
@@ -39,7 +36,18 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
   onClick,
   className = '',
   selected = false,
+  lang: propLang,
+  showIndices: propShowIndices,
 }) => {
+  const context = useMahjongLanguage();
+  const effectiveLang: MahjongLang = propLang || context?.lang || 'ja';
+  const effectiveShowIndices: boolean =
+    propShowIndices !== undefined
+      ? propShowIndices
+      : context?.showIndices !== undefined
+      ? context.showIndices
+      : effectiveLang === 'en';
+
   const rawTile = tile?.trim().toLowerCase().replace(/[*_+=-\s]/g, '') || '1z';
   const normTile = /^[mpsz]\d$/.test(rawTile) ? rawTile[1] + rawTile[0] : rawTile;
   const isRedFive = normTile === '0m' || normTile === '0p' || normTile === '0s' || (isDora && (normTile === '5m' || normTile === '5p' || normTile === '5s'));
@@ -56,7 +64,11 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
   const currentWidth = isSideways ? dim.h : dim.w;
   const currentHeight = isSideways ? dim.w : dim.h;
 
-  const tileLabel = isConcealed ? '伏せ牌' : (TILE_NAMES[normTile] || normTile);
+  const tileLabel = isConcealed
+    ? (effectiveLang === 'en' ? 'Concealed Tile' : '伏せ牌')
+    : effectiveLang === 'en'
+    ? TILE_NAMES_EN[normTile] || normTile
+    : TILE_NAMES_JA[normTile] || normTile;
 
   return (
     <div
@@ -129,6 +141,24 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
             {/* Red Dora Indicator Star/Dot for visual delight */}
             {isRedFive && (
               <span className="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-red-600 ring-1 ring-red-400 shadow-sm animate-pulse z-20" />
+            )}
+
+            {/* Western Corner Index for English / Non-Japanese accessibility */}
+            {effectiveShowIndices && TILE_WESTERN_INDEX[normTile] && (
+              <span
+                style={{
+                  color: isRedFive
+                    ? '#dc2626'
+                    : TILE_WESTERN_INDEX[normTile]?.color || '#1e293b',
+                }}
+                className={`
+                  absolute top-[2px] left-[2.5px] font-sans font-black leading-none pointer-events-none select-none z-20
+                  ${size === 'sm' ? 'text-[8.5px]' : size === 'md' ? 'text-[11px]' : size === 'lg' ? 'text-[13px]' : 'text-[15px]'}
+                  drop-shadow-[0_0.8px_0_rgba(255,255,255,0.95)]
+                `}
+              >
+                {TILE_WESTERN_INDEX[normTile].label}
+              </span>
             )}
 
             <TileFace tileCode={normTile} isRed={isRedFive} size={size} />

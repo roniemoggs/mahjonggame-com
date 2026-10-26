@@ -12,6 +12,10 @@ import {
   type PracticeQuestion,
 } from '../../lib/mahjong/calculatorEngine';
 import {
+  MahjongLanguageContext,
+  type MahjongLang,
+} from '../../lib/mahjong/i18n';
+import {
   Sparkles,
   RotateCcw,
   Layers,
@@ -72,7 +76,180 @@ const TILE_LABELS: Record<string, string> = {
   '5z': '白', '6z': '發', '7z': '中',
 };
 
-export const ScoreCalculator: React.FC = () => {
+interface ScoreCalculatorProps {
+  lang?: MahjongLang;
+}
+
+const TILE_LABELS_EN: Record<string, string> = {
+  '1m': '1 Man', '2m': '2 Man', '3m': '3 Man', '4m': '4 Man', '5m': '5 Man',
+  '6m': '6 Man', '7m': '7 Man', '8m': '8 Man', '9m': '9 Man', '0m': 'Red 5 Man',
+  '1p': '1 Pin', '2p': '2 Pin', '3p': '3 Pin', '4p': '4 Pin', '5p': '5 Pin',
+  '6p': '6 Pin', '7p': '7 Pin', '8p': '8 Pin', '9p': '9 Pin', '0p': 'Red 5 Pin',
+  '1s': '1 Sou', '2s': '2 Sou', '3s': '3 Sou', '4s': '4 Sou', '5s': '5 Sou',
+  '6s': '6 Sou', '7s': '7 Sou', '8s': '8 Sou', '9s': '9 Sou', '0s': 'Red 5 Sou',
+  '1z': 'East', '2z': 'South', '3z': 'West', '4z': 'North',
+  '5z': 'White Dragon', '6z': 'Green Dragon', '7z': 'Red Dragon',
+};
+
+const TITLE_EN: Record<string, string> = {
+  '満貫': 'Mangan',
+  '跳満': 'Haneman',
+  '倍満': 'Baiman',
+  '三倍満': 'Sanbaiman',
+  '役満': 'Yakuman',
+  'ダブル役満': 'Double Yakuman',
+  'トリプル役満': 'Triple Yakuman',
+  '役なし': 'No Yaku',
+  '未完成': 'Incomplete Hand',
+  '手牌不足': 'Insufficient Tiles',
+};
+
+const YAKU_NAME_EN: Record<string, string> = {
+  '立直': 'Riichi',
+  '門前清自摸和': 'Fully Concealed Hand (Tsumo)',
+  '断幺九': 'All Simples (Tanyao)',
+  '平和': 'Pinfu',
+  '一盃口': 'Pure Double Chow (Iipeikou)',
+  '役牌: 白': 'Honor: White Dragon',
+  '役牌: 發': 'Honor: Green Dragon',
+  '役牌: 中': 'Honor: Red Dragon',
+  '役牌: 場風 東': 'Honor: Round Wind (East)',
+  '役牌: 場風 南': 'Honor: Round Wind (South)',
+  '役牌: 自風 東': 'Honor: Seat Wind (East)',
+  '役牌: 自風 南': 'Honor: Seat Wind (South)',
+  '役牌: 自風 西': 'Honor: Seat Wind (West)',
+  '役牌: 自風 北': 'Honor: Seat Wind (North)',
+  '役牌 白': 'Honor: White Dragon',
+  '役牌 發': 'Honor: Green Dragon',
+  '役牌 中': 'Honor: Red Dragon',
+  '自風 東': 'Seat Wind: East',
+  '自風 南': 'Seat Wind: South',
+  '自風 西': 'Seat Wind: West',
+  '自風 北': 'Seat Wind: North',
+  '場風 東': 'Round Wind: East',
+  '場風 南': 'Round Wind: South',
+  '嶺上開花': 'After a Kan (Rinshan)',
+  '槍槓': 'Robbing a Kan (Chankan)',
+  '海底摸月': 'Under the Sea (Haitei)',
+  '河底撈魚': 'Under the River (Houtei)',
+  '一発': 'One-Shot (Ippatsu)',
+  'ドラ': 'Dora',
+  '赤ドラ': 'Red Dora',
+  '裏ドラ': 'Ura Dora',
+  'ダブル立直': 'Double Riichi',
+  '連風牌: 東': 'Double Wind: East',
+  '連風牌: 南': 'Double Wind: South',
+  '三色同順': 'Three Color Straight (Sanshoku Doujun)',
+  '一気通貫': 'Straight (Ikkitsuukan)',
+  '混全帯幺九': 'Terminal or Honor in Each Set (Chanta)',
+  '七対子': 'Seven Pairs (Chiitoitsu)',
+  '対々和': 'All Triplets (Toitoi)',
+  '三暗刻': 'Three Concealed Triplets (San Ankou)',
+  '混老頭': 'All Terminals and Honors (Honroutou)',
+  '三色同刻': 'Three Colored Triplets (Sanshoku Doukou)',
+  '三槓子': 'Three Kans (Sankantsu)',
+  '小三元': 'Little Three Dragons (Shousangen)',
+  '混一色': 'Half Flush (Honitsu)',
+  '純全帯幺九': 'Terminals in Each Set (Junchan)',
+  '二盃口': 'Twice Pure Double Chow (Ryanpeikou)',
+  '清一色': 'Full Flush (Chinitsu)',
+  '天和': 'Blessing of Heaven (Tenhou)',
+  '地和': 'Blessing of Earth (Chiihou)',
+  '国士無双': 'Thirteen Orphans (Kokushi Musou)',
+  '国士無双十三面待ち': 'Thirteen Orphans 13-Wait',
+  '四暗刻': 'Four Concealed Triplets (Suu Ankou)',
+  '四暗刻単騎': 'Four Concealed Triplets Single Wait',
+  '大三元': 'Big Three Dragons (Daisangen)',
+  '字一色': 'All Honors (Tsuuiisou)',
+  '緑一色': 'All Green (Ryuuiisou)',
+  '清老頭': 'All Terminals (Chinroutou)',
+  '九蓮宝燈': 'Nine Gates (Chuuren Poutou)',
+  '純正九蓮宝燈': 'Pure Nine Gates 9-Wait',
+  '四槓子': 'Four Kans (Suukantsu)',
+  '小四喜': 'Four Little Winds (Shousuushii)',
+  '大四喜': 'Four Big Winds (Daisuushii)',
+};
+
+const FU_NAME_EN: Record<string, string> = {
+  '副底 (基本符)': 'Base Fu (Futei)',
+  'ツモ符': 'Self-Draw Fu (Tsumo)',
+  '門前加符 (ロン)': 'Concealed Ron Fu',
+  '単騎待ち': 'Single Pair Wait (Tanki)',
+  '嵌張待ち': 'Closed Middle Wait (Kanchan)',
+  '辺張待ち': 'Edge Wait (Penchan)',
+  '双ポン待ち': 'Dual Pon Wait (Shanpon)',
+  '両面待ち': 'Two-Sided Wait (Ryanmen)',
+  '七対子': 'Seven Pairs (25 Fu fixed)',
+  '平和ツモ': 'Pinfu Tsumo (20 Fu fixed)',
+  '符の切り上げ (10符単位)': 'Rounded up to next 10',
+  '切り上げ満貫': 'Kiriage Mangan',
+};
+
+const PRESET_EN: Record<string, { name: string; desc: string }> = {
+  'menzen-tsumo-pinfu': {
+    name: 'Pinfu Tsumo (20 Fu 2 Han)',
+    desc: 'The only 20 fu hand in Mahjong. 400/700 payment.',
+  },
+  'tanyao-dora3': {
+    name: 'Tanyao Dora 3 (Mangan 8,000 pts)',
+    desc: '40 fu 4 han dealer mangan hand.',
+  },
+  'chiitoitsu-dora2': {
+    name: 'Seven Pairs Dora 2 (6,400 pts)',
+    desc: 'Fixed 25 fu Seven Pairs with 2 Dora.',
+  },
+  'sanshoku-pinfu': {
+    name: 'Riichi Pinfu Sanshoku (Mangan)',
+    desc: 'Three-color straight (234) combined with Pinfu.',
+  },
+  'honitsu-yakuhai': {
+    name: 'Half Flush Honors (Haneman 12,000 pts)',
+    desc: 'Concealed Bamboo half flush with Dragons.',
+  },
+  'chinitsu-baiman': {
+    name: 'Full Flush Pinfu Dora 1 (Baiman 16,000 pts)',
+    desc: 'Pure character flush with Pinfu and Dora.',
+  },
+  'kokushi-musou': {
+    name: 'Thirteen Orphans (Yakuman 32,000 pts)',
+    desc: 'Legendary Yakuman with all 13 terminal and honor tiles.',
+  },
+  'daisangen': {
+    name: 'Big Three Dragons (Yakuman 32,000 pts)',
+    desc: 'Three sets of White, Green, and Red Dragons.',
+  },
+};
+
+const QUIZ_EN: Record<string, { title: string; scoreDisplay: string; explanation: string }> = {
+  'q1': {
+    title: 'Pinfu Tsumo Fu and Payment Calculation',
+    scoreDisplay: 'Non-Dealer 400 / 700 pts (Total 1,500 pts)',
+    explanation: 'Fully Concealed Tsumo (1 Han) + Pinfu (1 Han) = 2 Han. Pinfu Tsumo is the only exception in Mahjong where the 2 Tsumo Fu is waived, remaining fixed at 20 Fu. 20 Fu 2 Han as non-dealer pays 400 from non-dealers, 700 from dealer (total 1,500 pts).',
+  },
+  'q2': {
+    title: 'Seven Pairs (Chiitoitsu) Fu and Score Rule',
+    scoreDisplay: 'Non-Dealer 1,600 / 3,200 pts (Total 6,400 pts)',
+    explanation: 'Seven Pairs is always fixed at 25 Fu. Combined with Riichi (1) + Chiitoitsu (2) + Tsumo (1) + Dora 1 = 5 Han, which reaches Mangan (8,000 pts / 2,000-4,000 tsumo).',
+  },
+  'q3': {
+    title: 'Dealer Tanyao Ron (40 Fu 3 Han)',
+    scoreDisplay: 'Dealer Ron 11,600 pts',
+    explanation: 'Base 20 Fu + Menzen Ron 10 Fu + 8 Fu (Honor/Terminal concealed triplet) + 2 Fu (wait) = 40 Fu. 40 Fu 3 Han for dealer results in 7,700 pts.',
+  },
+  'q4': {
+    title: 'Dragon Triplet Concealed Hand Fu Calculation',
+    scoreDisplay: 'Non-Dealer 5,200 pts',
+    explanation: 'Base 20 Fu + Menzen Ron 10 Fu + 8 Fu (White Dragon concealed triplet) + 2 Fu (Kanchan wait) = 40 Fu. 40 Fu 3 Han as non-dealer is 5,200 pts.',
+  },
+  'q5': {
+    title: 'High Fu Concealed Triplets Hand',
+    scoreDisplay: 'Non-Dealer Ron 8,000 pts (Mangan)',
+    explanation: 'Concealed terminal triplets yield 8 Fu each. With base fu and wait, the hand reaches 50 Fu 3 Han, which is 6,400 pts (or 70 Fu depending on melds).',
+  },
+};
+
+export const ScoreCalculator: React.FC<ScoreCalculatorProps> = ({ lang = 'ja' }) => {
+  const isEn = lang === 'en';
   const [activeTab, setActiveTab] = useState<'calculator' | 'practice'>('calculator');
 
   // Calculator State
@@ -270,8 +447,31 @@ export const ScoreCalculator: React.FC = () => {
     setCurrentQuizIndex((prev) => (prev + 1) % PRACTICE_QUESTIONS.length);
   };
 
+  const getTitle = (title: string) => (isEn ? TITLE_EN[title] || title : title);
+  const getYakuName = (name: string) => (isEn ? YAKU_NAME_EN[name] || name : name);
+  const getFuName = (name: string) => (isEn ? FU_NAME_EN[name] || name : name);
+  const getTileLabel = (tile: string) => (isEn ? TILE_LABELS_EN[tile] || tile : TILE_LABELS[tile] || tile);
+
+  const formatPaymentSummary = (payment: ScoreCalculationResult['payment']) => {
+    if (!isEn) return payment.summary;
+    if (winType === 'ron') {
+      const payer = seatWind === 0 ? 'Non-Dealer' : 'Discarder';
+      return `${payment.total.toLocaleString()} pts (${payer} pays ${payment.ronAmount?.toLocaleString() || payment.total.toLocaleString()} pts)`;
+    }
+    if (seatWind === 0) {
+      return `Each player pays ${(payment.tsumoNonDealer || 0).toLocaleString()} pts (Total ${payment.total.toLocaleString()} pts)`;
+    }
+    return `Dealer: ${(payment.tsumoDealer || 0).toLocaleString()} pts, Others: ${(payment.tsumoNonDealer || 0).toLocaleString()} pts each`;
+  };
+
+  const currentQuizData = PRACTICE_QUESTIONS[currentQuizIndex];
+  const localizedQuizTitle = isEn && QUIZ_EN[currentQuizData.id]?.title ? QUIZ_EN[currentQuizData.id].title : currentQuizData.title;
+  const localizedQuizScoreDisplay = isEn && QUIZ_EN[currentQuizData.id]?.scoreDisplay ? QUIZ_EN[currentQuizData.id].scoreDisplay : currentQuizData.scoreDisplay;
+  const localizedQuizExplanation = isEn && QUIZ_EN[currentQuizData.id]?.explanation ? QUIZ_EN[currentQuizData.id].explanation : currentQuizData.explanation;
+
   return (
-    <div className="space-y-8">
+    <MahjongLanguageContext.Provider value={{ lang, showIndices: isEn, setShowIndices: () => {} }}>
+      <div className="space-y-8">
       {/* Top Mode Selector Tabs */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <div className="flex items-center gap-2">
@@ -286,7 +486,7 @@ export const ScoreCalculator: React.FC = () => {
               }
             `}
           >
-            <span>点数計算シミュレーター</span>
+            <span>{isEn ? 'Score Calculator' : '点数計算シミュレーター'}</span>
           </button>
 
           <button
@@ -301,7 +501,7 @@ export const ScoreCalculator: React.FC = () => {
             `}
           >
             <Trophy className="w-4 h-4 text-amber-400" />
-            <span>点数計算練習ドリル (クイズ)</span>
+            <span>{isEn ? 'Scoring Practice Drills (Quiz)' : '点数計算練習ドリル (クイズ)'}</span>
             <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-500/30">
               New
             </span>
@@ -312,17 +512,17 @@ export const ScoreCalculator: React.FC = () => {
           <button
             onClick={handleCopyShareLink}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700/60 transition-colors shadow-sm"
-            title="現在の手牌と条件をURLとしてコピー"
+            title={isEn ? 'Copy URL for current hand and settings' : '現在の手牌と条件をURLとしてコピー'}
           >
             {copiedNotification ? (
               <>
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400">URLコピー完了!</span>
+                <span className="text-emerald-400">{isEn ? 'Link Copied!' : 'URLコピー完了!'}</span>
               </>
             ) : (
               <>
                 <Share2 className="w-3.5 h-3.5" />
-                <span>手牌URLを共有</span>
+                <span>{isEn ? 'Share Hand URL' : '手牌URLを共有'}</span>
               </>
             )}
           </button>
@@ -342,10 +542,10 @@ export const ScoreCalculator: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-ping" />
-                    選択中の手牌 ({handTiles.length} / 14枚)
+                    {isEn ? `Selected Hand (${handTiles.length} / 14 Tiles)` : `選択中の手牌 (${handTiles.length} / 14枚)`}
                   </h3>
                   <span className="text-xs text-slate-400">
-                    （牌をクリックで和了牌に指定）
+                    {isEn ? '(Click tile to designate as winning tile)' : '（牌をクリックで和了牌に指定）'}
                   </span>
                 </div>
 
@@ -353,16 +553,16 @@ export const ScoreCalculator: React.FC = () => {
                   <button
                     onClick={handleSortHand}
                     className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors border border-slate-700"
-                    title="手牌を萬子・筒子・索子・字牌の順に並べ替えます"
+                    title={isEn ? 'Sort hand by suit' : '手牌を萬子・筒子・索子・字牌の順に並べ替えます'}
                   >
-                    理牌 (並び替え)
+                    {isEn ? 'Sort' : '理牌 (並び替え)'}
                   </button>
                   <button
                     onClick={handleClearHand}
                     className="px-2.5 py-1 rounded-lg bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 text-xs font-bold transition-colors border border-rose-800/40"
-                    title="手牌を全消去します"
+                    title={isEn ? 'Clear all tiles' : '手牌を全消去します'}
                   >
-                    全消去
+                    {isEn ? 'Clear All' : '全消去'}
                   </button>
                 </div>
               </div>
@@ -371,7 +571,7 @@ export const ScoreCalculator: React.FC = () => {
               <div className="min-h-[92px] bg-slate-950/90 border border-slate-800 rounded-xl p-3 sm:p-4 flex items-center overflow-x-auto shadow-inner">
                 {handTiles.length === 0 ? (
                   <div className="text-xs text-slate-400 text-center w-full py-4">
-                    下の牌パレットから牌をクリックして手牌（14枚）を作成してください
+                    {isEn ? 'Click tiles below in the palette to build a hand (14 tiles)' : '下の牌パレットから牌をクリックして手牌（14枚）を作成してください'}
                   </div>
                 ) : (
                   <div className="inline-flex items-end gap-1 sm:gap-1.5 min-w-max">
@@ -385,11 +585,11 @@ export const ScoreCalculator: React.FC = () => {
                           {/* Winning Tile Badge */}
                           {isWinning ? (
                             <span className="text-[9px] font-black text-amber-300 bg-amber-950/90 border border-amber-500/60 px-1 py-0.2 rounded -mb-1 z-10 shadow-sm animate-bounce">
-                              和了
+                              {isEn ? 'Win' : '和了'}
                             </span>
                           ) : (
                             <span className="text-[9px] opacity-0 group-hover:opacity-100 text-slate-400 transition-opacity -mb-1 z-10">
-                              指定
+                              {isEn ? 'Win' : '指定'}
                             </span>
                           )}
 
@@ -400,7 +600,7 @@ export const ScoreCalculator: React.FC = () => {
                                 : 'hover:-translate-y-1'
                             }`}
                             onClick={() => setWinTile(tileCode)}
-                            title={`${TILE_LABELS[tileCode] || tileCode} を和了牌に指定`}
+                            title={`${getTileLabel(tileCode)}: ${isEn ? 'Designate as winning tile' : '和了牌に指定'}`}
                           >
                             <MahjongTile tile={tileCode} size="sm" />
                           </div>
@@ -412,7 +612,7 @@ export const ScoreCalculator: React.FC = () => {
                               handleRemoveTile(index);
                             }}
                             className="w-4 h-4 rounded-full bg-rose-600/90 hover:bg-rose-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity mt-1 text-[10px]"
-                            title="この牌を削除"
+                            title={isEn ? 'Remove this tile' : 'この牌を削除'}
                           >
                             ×
                           </button>
@@ -427,19 +627,23 @@ export const ScoreCalculator: React.FC = () => {
               <div className="space-y-1.5 pt-1">
                 <div className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  手牌プリセット（ワンクリックで読み込み）
+                  {isEn ? 'Hand Presets (Quick-load sample hands)' : '手牌プリセット（ワンクリックで読み込み）'}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {PRESET_HANDS.map((preset) => (
-                    <button
-                      key={preset.id}
-                      onClick={() => handleLoadPreset(preset)}
-                      className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50 transition-colors"
-                      title={preset.description}
-                    >
-                      {preset.name}
-                    </button>
-                  ))}
+                  {PRESET_HANDS.map((preset) => {
+                    const presetLabel = isEn && PRESET_EN[preset.id] ? PRESET_EN[preset.id].name : preset.name;
+                    const presetDesc = isEn && PRESET_EN[preset.id] ? PRESET_EN[preset.id].desc : preset.description;
+                    return (
+                      <button
+                        key={preset.id}
+                        onClick={() => handleLoadPreset(preset)}
+                        className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50 transition-colors"
+                        title={presetDesc}
+                      >
+                        {presetLabel}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -449,61 +653,70 @@ export const ScoreCalculator: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                   <Layers className="w-4 h-4 text-emerald-400" />
-                  牌パレット（クリックで手牌に追加）
+                  {isEn ? 'Tile Palette (Click to add to hand)' : '牌パレット（クリックで手牌に追加）'}
                 </h3>
                 <span className="text-xs text-slate-400">
-                  牌右上の数字: 手牌に含まれる枚数（最大4枚）
+                  {isEn ? 'Badge shows count in current hand (max 4)' : '牌右上の数字: 手牌に含まれる枚数（最大4枚）'}
                 </span>
               </div>
 
               <div className="space-y-3.5">
-                {TILE_GROUPS.map((group) => (
-                  <div key={group.name} className="space-y-1.5">
-                    <div className="text-xs font-semibold text-slate-400">
-                      {group.name}
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60">
-                      {group.tiles.map((tileCode) => {
-                        const count = tileCounts[tileCode] || 0;
-                        const isMax = tileCode.startsWith('0') ? count >= 1 : count >= 4;
-                        const isFull = handTiles.length >= 14;
+                {TILE_GROUPS.map((group) => {
+                  let groupLabel = group.name;
+                  if (isEn) {
+                    if (group.name.includes('萬子')) groupLabel = 'Characters (Manzu)';
+                    else if (group.name.includes('筒子')) groupLabel = 'Circles (Pinzu)';
+                    else if (group.name.includes('索子')) groupLabel = 'Bamboos (Souzu)';
+                    else if (group.name.includes('字牌')) groupLabel = 'Honors (Dragons & Winds)';
+                  }
+                  return (
+                    <div key={group.name} className="space-y-1.5">
+                      <div className="text-xs font-semibold text-slate-400">
+                        {groupLabel}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60">
+                        {group.tiles.map((tileCode) => {
+                          const count = tileCounts[tileCode] || 0;
+                          const isMax = tileCode.startsWith('0') ? count >= 1 : count >= 4;
+                          const isFull = handTiles.length >= 14;
 
-                        return (
-                          <div
-                            key={`palette-${tileCode}`}
-                            className="relative flex flex-col items-center"
-                          >
-                            <button
-                              disabled={isMax || isFull}
-                              onClick={() => handleAddTile(tileCode)}
-                              className={`
-                                transition-all rounded-[4px]
-                                ${
-                                  isMax || isFull
-                                    ? 'opacity-35 grayscale cursor-not-allowed'
-                                    : 'hover:-translate-y-1 hover:brightness-110 active:translate-y-0 cursor-pointer'
-                                }
-                              `}
-                              title={`${TILE_LABELS[tileCode] || tileCode} を手牌に追加`}
+                          return (
+                            <div
+                              key={`palette-${tileCode}`}
+                              className="relative flex flex-col items-center"
                             >
-                              <MahjongTile tile={tileCode} size="sm" />
-                            </button>
-                            {count > 0 && (
-                              <span
+                              <button
+                                disabled={isMax || isFull}
+                                onClick={() => handleAddTile(tileCode)}
                                 className={`
-                                  text-[9px] font-black px-1 rounded-full absolute -top-1 -right-1 z-10 shadow-sm
-                                  ${isMax ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}
+                                  transition-all rounded-[4px]
+                                  ${
+                                    isMax || isFull
+                                      ? 'opacity-35 grayscale cursor-not-allowed'
+                                      : 'hover:-translate-y-1 hover:brightness-110 active:translate-y-0 cursor-pointer'
+                                  }
                                 `}
+                                title={`${getTileLabel(tileCode)}: ${isEn ? 'Add to hand' : 'を手牌に追加'}`}
                               >
-                                {count}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
+                                <MahjongTile tile={tileCode} size="sm" />
+                              </button>
+                              {count > 0 && (
+                                <span
+                                  className={`
+                                    text-[9px] font-black px-1 rounded-full absolute -top-1 -right-1 z-10 shadow-sm
+                                    ${isMax ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}
+                                  `}
+                                >
+                                  {count}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -511,14 +724,14 @@ export const ScoreCalculator: React.FC = () => {
             <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-md space-y-5">
               <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
-                局状況・和了条件設定
+                {isEn ? 'Winning Conditions & Table Situation' : '局状況・和了条件設定'}
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Win Type */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-400">
-                    和了方式
+                    {isEn ? 'Winning Method' : '和了方式'}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -532,7 +745,7 @@ export const ScoreCalculator: React.FC = () => {
                         }
                       `}
                     >
-                      ツモ和了
+                      {isEn ? 'Tsumo (Self-Draw)' : 'ツモ和了'}
                     </button>
                     <button
                       onClick={() => setWinType('ron')}
@@ -545,7 +758,7 @@ export const ScoreCalculator: React.FC = () => {
                         }
                       `}
                     >
-                      ロン和了 (出アガリ)
+                      {isEn ? 'Ron (Discard Win)' : 'ロン和了 (出アガリ)'}
                     </button>
                   </div>
                 </div>
@@ -553,14 +766,14 @@ export const ScoreCalculator: React.FC = () => {
                 {/* Seat Wind */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-400">
-                    プレイヤーの風 (自風 / 親子)
+                    {isEn ? 'Seat Wind (Dealer / Non-Dealer)' : 'プレイヤーの風 (自風 / 親子)'}
                   </label>
                   <div className="grid grid-cols-4 gap-1.5">
                     {[
-                      { wind: 0 as SeatWind, name: '東 (親)' },
-                      { wind: 1 as SeatWind, name: '南 (子)' },
-                      { wind: 2 as SeatWind, name: '西 (子)' },
-                      { wind: 3 as SeatWind, name: '北 (子)' },
+                      { wind: 0 as SeatWind, name: isEn ? 'East (Dealer)' : '東 (親)' },
+                      { wind: 1 as SeatWind, name: isEn ? 'South' : '南 (子)' },
+                      { wind: 2 as SeatWind, name: isEn ? 'West' : '西 (子)' },
+                      { wind: 3 as SeatWind, name: isEn ? 'North' : '北 (子)' },
                     ].map((item) => (
                       <button
                         key={item.wind}
@@ -583,7 +796,7 @@ export const ScoreCalculator: React.FC = () => {
                 {/* Round Wind */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-400">
-                    場風 (東場 / 南場)
+                    {isEn ? 'Round Wind' : '場風 (東場 / 南場)'}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -597,7 +810,7 @@ export const ScoreCalculator: React.FC = () => {
                         }
                       `}
                     >
-                      東場 (トンバ)
+                      {isEn ? 'East Round (Tonba)' : '東場 (トンバ)'}
                     </button>
                     <button
                       onClick={() => setRoundWind(1)}
@@ -610,7 +823,7 @@ export const ScoreCalculator: React.FC = () => {
                         }
                       `}
                     >
-                      南場 (ナンバ)
+                      {isEn ? 'South Round (Nanba)' : '南場 (ナンバ)'}
                     </button>
                   </div>
                 </div>
@@ -618,13 +831,13 @@ export const ScoreCalculator: React.FC = () => {
                 {/* Riichi Status */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-400">
-                    立直 (リーチ)
+                    {isEn ? 'Riichi Declaration' : '立直 (リーチ)'}
                   </label>
                   <div className="grid grid-cols-3 gap-1.5">
                     {[
-                      { val: 0 as const, label: 'なし' },
-                      { val: 1 as const, label: '立直 (1翻)' },
-                      { val: 2 as const, label: 'ダブリー (2翻)' },
+                      { val: 0 as const, label: isEn ? 'None' : 'なし' },
+                      { val: 1 as const, label: isEn ? 'Riichi (1 Han)' : '立直 (1翻)' },
+                      { val: 2 as const, label: isEn ? 'Double Riichi' : 'ダブリー (2翻)' },
                     ].map((item) => (
                       <button
                         key={item.val}
@@ -653,10 +866,13 @@ export const ScoreCalculator: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    ドラ表示牌（クリックで変更）
+                    {isEn ? 'Dora Indicators (Click to change)' : 'ドラ表示牌（クリックで変更）'}
                   </label>
                   <span className="text-[11px] text-slate-400">
-                    実ドラ: <strong className="text-amber-400 font-bold">{doraIndicators.map(getDoraFromIndicator).map(d => TILE_LABELS[d] || d).join(', ')}</strong>
+                    {isEn ? 'Active Dora: ' : '実ドラ: '}
+                    <strong className="text-amber-400 font-bold">
+                      {doraIndicators.map(getDoraFromIndicator).map(d => getTileLabel(d)).join(', ')}
+                    </strong>
                   </span>
                 </div>
 
@@ -674,7 +890,7 @@ export const ScoreCalculator: React.FC = () => {
                           }
                         }}
                         className="text-slate-500 hover:text-rose-400 p-1"
-                        title="このドラ表示牌を削除"
+                        title={isEn ? 'Remove indicator' : 'このドラ表示牌を削除'}
                       >
                         ×
                       </button>
@@ -693,10 +909,10 @@ export const ScoreCalculator: React.FC = () => {
                         }}
                         className="bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       >
-                        <option value="">＋ ドラ表示牌を追加...</option>
+                        <option value="">{isEn ? '＋ Add Dora Indicator...' : '＋ ドラ表示牌を追加...'}</option>
                         {TILE_ORDER.filter(t => !t.startsWith('0')).map((t) => (
                           <option key={`dora-opt-${t}`} value={t}>
-                            {TILE_LABELS[t]} ({t})
+                            {getTileLabel(t)} ({t})
                           </option>
                         ))}
                       </select>
@@ -708,7 +924,7 @@ export const ScoreCalculator: React.FC = () => {
               {/* Incidental Yaku Checkboxes */}
               <div className="space-y-2 pt-2 border-t border-slate-800/80">
                 <label className="text-xs font-semibold text-slate-400">
-                  偶発役・オプション
+                  {isEn ? 'Incidental Yaku & Modifiers' : '偶発役・オプション'}
                 </label>
                 <div className="flex flex-wrap gap-2">
                   <label className="inline-flex items-center gap-1.5 text-xs text-slate-300 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
@@ -719,7 +935,7 @@ export const ScoreCalculator: React.FC = () => {
                       onChange={(e) => setIppatsu(e.target.checked)}
                       className="rounded border-slate-700 text-emerald-500 focus:ring-0"
                     />
-                    <span>一発 (リーチ必須)</span>
+                    <span>{isEn ? 'Ippatsu (One-Shot)' : '一発 (リーチ必須)'}</span>
                   </label>
 
                   <label className="inline-flex items-center gap-1.5 text-xs text-slate-300 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
@@ -729,7 +945,7 @@ export const ScoreCalculator: React.FC = () => {
                       onChange={(e) => setHaidi(e.target.checked ? 1 : 0)}
                       className="rounded border-slate-700 text-emerald-500 focus:ring-0"
                     />
-                    <span>海底摸月 (ツモ)</span>
+                    <span>{isEn ? 'Haitei (Last Draw Win)' : '海底摸月 (ツモ)'}</span>
                   </label>
 
                   <label className="inline-flex items-center gap-1.5 text-xs text-slate-300 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
@@ -739,7 +955,7 @@ export const ScoreCalculator: React.FC = () => {
                       onChange={(e) => setHaidi(e.target.checked ? 2 : 0)}
                       className="rounded border-slate-700 text-emerald-500 focus:ring-0"
                     />
-                    <span>河底撈魚 (ロン)</span>
+                    <span>{isEn ? 'Houtei (Last Discard Win)' : '河底撈魚 (ロン)'}</span>
                   </label>
 
                   <label className="inline-flex items-center gap-1.5 text-xs text-slate-300 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
@@ -749,7 +965,7 @@ export const ScoreCalculator: React.FC = () => {
                       onChange={(e) => setRinshan(e.target.checked)}
                       className="rounded border-slate-700 text-emerald-500 focus:ring-0"
                     />
-                    <span>嶺上開花</span>
+                    <span>{isEn ? 'Rinshan Kaihou (Dead Wall Win)' : '嶺上開花'}</span>
                   </label>
 
                   <label className="inline-flex items-center gap-1.5 text-xs text-slate-300 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
@@ -759,7 +975,7 @@ export const ScoreCalculator: React.FC = () => {
                       onChange={(e) => setChankan(e.target.checked)}
                       className="rounded border-slate-700 text-emerald-500 focus:ring-0"
                     />
-                    <span>槍槓</span>
+                    <span>{isEn ? 'Chankan (Robbing Kan)' : '槍槓'}</span>
                   </label>
 
                   <label className="inline-flex items-center gap-1.5 text-xs text-slate-300 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
@@ -770,7 +986,7 @@ export const ScoreCalculator: React.FC = () => {
                       onChange={(e) => setTianhu(e.target.checked ? 1 : 0)}
                       className="rounded border-slate-700 text-emerald-500 focus:ring-0"
                     />
-                    <span>天和 (親限定)</span>
+                    <span>{isEn ? 'Tenhou (Blessing of Heaven)' : '天和 (親限定)'}</span>
                   </label>
 
                   <label className="inline-flex items-center gap-1.5 text-xs text-slate-300 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
@@ -781,7 +997,7 @@ export const ScoreCalculator: React.FC = () => {
                       onChange={(e) => setTianhu(e.target.checked ? 2 : 0)}
                       className="rounded border-slate-700 text-emerald-500 focus:ring-0"
                     />
-                    <span>地和 (子限定)</span>
+                    <span>{isEn ? 'Chiihou (Blessing of Earth)' : '地和 (子限定)'}</span>
                   </label>
                 </div>
               </div>
@@ -790,7 +1006,7 @@ export const ScoreCalculator: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-800/80">
                 <div className="flex items-center justify-between bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                   <span className="text-xs text-slate-300 font-semibold">
-                    本場数（+300点/本）
+                    {isEn ? 'Honba (+300 pts/stick)' : '本場数（+300点/本）'}
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -813,7 +1029,7 @@ export const ScoreCalculator: React.FC = () => {
 
                 <div className="flex items-center justify-between bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                   <span className="text-xs text-slate-300 font-semibold">
-                    供託リーチ棒（+1,000点）
+                    {isEn ? 'Riichi Sticks (+1,000 pts)' : '供託リーチ棒（+1,000点）'}
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -844,10 +1060,10 @@ export const ScoreCalculator: React.FC = () => {
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="text-base font-black text-white flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-emerald-400 animate-spin" />
-                  リアルタイム計算結果
+                  {isEn ? 'Calculation Result' : 'リアルタイム計算結果'}
                 </h3>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${calcResult.titleBadgeBg}`}>
-                  {calcResult.title}
+                  {getTitle(calcResult.title)}
                 </span>
               </div>
 
@@ -857,31 +1073,31 @@ export const ScoreCalculator: React.FC = () => {
                   {/* Big Score Callout */}
                   <div className="bg-gradient-to-br from-slate-950 via-slate-950/80 to-emerald-950/30 border border-emerald-500/30 rounded-2xl p-5 text-center space-y-2 shadow-inner">
                     <div className="text-xs text-emerald-400 font-semibold tracking-wider uppercase">
-                      {seatWind === 0 ? '親の和了' : '子の和了'} • {winType === 'tsumo' ? 'ツモ' : 'ロン'}
+                      {seatWind === 0 ? (isEn ? 'Dealer Win' : '親の和了') : (isEn ? 'Non-Dealer Win' : '子の和了')} • {winType === 'tsumo' ? (isEn ? 'Tsumo' : 'ツモ') : (isEn ? 'Ron' : 'ロン')}
                     </div>
                     <div className="text-4xl sm:text-5xl font-black text-white font-mono tracking-tight drop-shadow-md">
                       {calcResult.totalPoints.toLocaleString()}
                       <span className="text-lg font-bold text-slate-300 ml-1.5 font-sans">
-                        点
+                        {isEn ? 'pts' : '点'}
                       </span>
                     </div>
                     <div className="text-xs text-amber-300 font-medium">
-                      {calcResult.payment.summary}
+                      {formatPaymentSummary(calcResult.payment)}
                     </div>
                   </div>
 
                   {/* Han & Fu Summary Pills */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-center space-y-0.5">
-                      <div className="text-[11px] text-slate-400">合計翻数</div>
+                      <div className="text-[11px] text-slate-400">{isEn ? 'Total Han' : '合計翻数'}</div>
                       <div className="text-xl font-black text-white font-mono">
-                        {calcResult.han} <span className="text-xs font-normal text-slate-400">翻</span>
+                        {calcResult.han} <span className="text-xs font-normal text-slate-400">{isEn ? 'Han' : '翻'}</span>
                       </div>
                     </div>
                     <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-center space-y-0.5">
-                      <div className="text-[11px] text-slate-400">計算符数</div>
+                      <div className="text-[11px] text-slate-400">{isEn ? 'Calculated Fu' : '計算符数'}</div>
                       <div className="text-xl font-black text-white font-mono">
-                        {calcResult.fu} <span className="text-xs font-normal text-slate-400">符</span>
+                        {calcResult.fu} <span className="text-xs font-normal text-slate-400">{isEn ? 'Fu' : '符'}</span>
                       </div>
                     </div>
                   </div>
@@ -891,7 +1107,7 @@ export const ScoreCalculator: React.FC = () => {
                     <div className="text-xs font-bold text-slate-300 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        成立役の内訳 ({calcResult.yakuList.length}役)
+                        {isEn ? `Established Yaku (${calcResult.yakuList.length})` : `成立役の内訳 (${calcResult.yakuList.length}役)`}
                       </span>
                     </div>
 
@@ -902,10 +1118,10 @@ export const ScoreCalculator: React.FC = () => {
                           className="flex items-center justify-between bg-slate-950/60 px-3.5 py-2 rounded-xl border border-slate-800/80 text-xs"
                         >
                           <span className="font-bold text-white tracking-wide">
-                            {yaku.name}
+                            {getYakuName(yaku.name)}
                           </span>
                           <span className="font-mono font-bold text-emerald-400">
-                            {typeof yaku.han === 'number' ? `${yaku.han}翻` : yaku.han}
+                            {typeof yaku.han === 'number' ? (isEn ? `${yaku.han} Han` : `${yaku.han}翻`) : (isEn ? 'Yakuman' : yaku.han)}
                           </span>
                         </div>
                       ))}
@@ -917,7 +1133,7 @@ export const ScoreCalculator: React.FC = () => {
                     <div className="space-y-2 pt-2 border-t border-slate-800/80">
                       <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                         <Info className="w-3.5 h-3.5 text-cyan-400" />
-                        符計算の詳細内訳
+                        {isEn ? 'Fu Breakdown' : '符計算の詳細内訳'}
                       </div>
 
                       <div className="space-y-1.5 text-xs">
@@ -928,7 +1144,7 @@ export const ScoreCalculator: React.FC = () => {
                           >
                             <div>
                               <div className="text-slate-300 font-medium">
-                                {item.name}
+                                {getFuName(item.name)}
                               </div>
                               {item.note && (
                                 <div className="text-[10px] text-slate-500">
@@ -937,7 +1153,7 @@ export const ScoreCalculator: React.FC = () => {
                               )}
                             </div>
                             <span className="font-mono font-bold text-cyan-400 shrink-0 ml-2">
-                              +{item.fu}符
+                              +{item.fu}{isEn ? ' Fu' : '符'}
                             </span>
                           </div>
                         ))}
@@ -953,7 +1169,9 @@ export const ScoreCalculator: React.FC = () => {
                       <HelpCircle className="w-5 h-5 text-amber-400" />
                     </div>
                     <div className="text-sm font-bold text-white">
-                      {calcResult.diagnostics?.isYakuNashi ? '役がありません (役なし)' : '和了形が未完成です'}
+                      {calcResult.diagnostics?.isYakuNashi
+                        ? (isEn ? 'No Yaku (Yaku Nashi)' : '役がありません (役なし)')
+                        : (isEn ? 'Hand is not completed' : '和了形が未完成です')}
                     </div>
                     <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
                       {calcResult.diagnostics?.reason}
@@ -964,9 +1182,11 @@ export const ScoreCalculator: React.FC = () => {
                   {calcResult.diagnostics && calcResult.diagnostics.xiangting !== 99 && (
                     <div className="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400">向聴数（シャンテン）:</span>
+                        <span className="text-slate-400">{isEn ? 'Shanten (Steps from Ready):' : '向聴数（シャンテン）:'}</span>
                         <strong className="text-amber-400 font-bold font-mono">
-                          {calcResult.diagnostics.xiangting === 0 ? 'テンパイ (聴牌)' : `${calcResult.diagnostics.xiangting}向聴`}
+                          {calcResult.diagnostics.xiangting === 0
+                            ? (isEn ? 'Tenpai (Ready)' : 'テンパイ (聴牌)')
+                            : (isEn ? `${calcResult.diagnostics.xiangting} away` : `${calcResult.diagnostics.xiangting}向聴`)}
                         </strong>
                       </div>
 
@@ -974,7 +1194,7 @@ export const ScoreCalculator: React.FC = () => {
                       {calcResult.diagnostics.tingpai.length > 0 && (
                         <div className="space-y-1.5">
                           <div className="text-[11px] text-slate-400">
-                            待ち牌（あとこの牌が入れば和了形完成）:
+                            {isEn ? 'Waiting tiles for complete hand:' : '待ち牌（あとこの牌が入れば和了形完成）:'}
                           </div>
                           <div className="flex flex-wrap gap-1.5">
                             {calcResult.diagnostics.tingpai.map((t, idx) => (
@@ -990,11 +1210,12 @@ export const ScoreCalculator: React.FC = () => {
                   <div className="bg-gradient-to-br from-blue-950/30 to-emerald-950/20 border border-blue-500/20 rounded-xl p-3.5 text-xs space-y-1 text-slate-300">
                     <div className="font-bold text-blue-300 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" />
-                      点数計算の基本ルール
+                      {isEn ? 'Riichi Mahjong Scoring Basics' : '点数計算の基本ルール'}
                     </div>
                     <p className="text-[11px] text-slate-400 leading-relaxed">
-                      麻雀であがるには手牌14枚が「4面子＋1雀頭」かつ「1翻以上の役」が必要です。<br />
-                      上のプリセットボタンから様々な定番手を読み込んで、符と翻の変化を観察してみましょう。
+                      {isEn
+                        ? 'To win in Riichi Mahjong, your 14-tile hand must form 4 melds (sequences or triplets) + 1 pair, and must contain at least 1 valid Yaku. Try loading presets above to see how Fu and Han affect payments.'
+                        : '麻雀であがるには手牌14枚が「4面子＋1雀頭」かつ「1翻以上の役」が必要です。上のプリセットボタンから様々な定番手を読み込んで、符と翻の変化を観察してみましょう。'}
                     </p>
                   </div>
                 </div>
@@ -1012,20 +1233,24 @@ export const ScoreCalculator: React.FC = () => {
             <div className="space-y-1">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/30">
                 <Trophy className="w-3 h-3 text-amber-400" />
-                第 {currentQuizIndex + 1} 問 / 全 {PRACTICE_QUESTIONS.length} 問
+                {isEn ? `Question ${currentQuizIndex + 1} / ${PRACTICE_QUESTIONS.length}` : `第 ${currentQuizIndex + 1} 問 / 全 ${PRACTICE_QUESTIONS.length} 問`}
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-white">
-                {currentQuiz.title}
+                {localizedQuizTitle}
               </h3>
               <p className="text-xs text-slate-400">
-                表示された手牌と状況から、正確な「翻数」「符数」「支払点数」を選択してください。
+                {isEn
+                  ? 'Based on the hand and scenario, select the correct Han, Fu, and Total Points.'
+                  : '表示された手牌と状況から、正確な「翻数」「符数」「支払点数」を選択してください。'}
               </p>
             </div>
 
             <div className="bg-slate-950/80 px-4 py-2.5 rounded-xl border border-slate-800 text-right">
-              <div className="text-[10px] text-slate-400">累計スコア</div>
+              <div className="text-[10px] text-slate-400">{isEn ? 'Cumulative Score' : '累計スコア'}</div>
               <div className="text-lg font-black text-emerald-400 font-mono">
-                {quizScore.correct} / {quizScore.total} 問正解
+                {isEn
+                  ? `${quizScore.correct} / ${quizScore.total} Correct`
+                  : `${quizScore.correct} / ${quizScore.total} 問正解`}
               </div>
             </div>
           </div>
@@ -1035,28 +1260,32 @@ export const ScoreCalculator: React.FC = () => {
             {/* Situation Indicators */}
             <div className="flex flex-wrap gap-2 text-xs font-semibold">
               <span className="px-2.5 py-1 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-800/40">
-                {currentQuiz.seatWind === 0 ? '自風: 東 (親)' : '自風: 南 (子)'}
+                {isEn
+                  ? (currentQuizData.seatWind === 0 ? 'Seat: East (Dealer)' : 'Seat: South (Non-Dealer)')
+                  : (currentQuizData.seatWind === 0 ? '自風: 東 (親)' : '自風: 南 (子)')}
               </span>
               <span className="px-2.5 py-1 rounded-lg bg-blue-950 text-blue-300 border border-blue-800/40">
-                {currentQuiz.roundWind === 0 ? '場風: 東場' : '場風: 南場'}
+                {isEn
+                  ? (currentQuizData.roundWind === 0 ? 'Round: East' : 'Round: South')
+                  : (currentQuizData.roundWind === 0 ? '場風: 東場' : '場風: 南場')}
               </span>
               <span className="px-2.5 py-1 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800/40">
-                和了方式: {currentQuiz.winType === 'tsumo' ? 'ツモ' : 'ロン'}
+                {isEn ? 'Win by: ' : '和了方式: '}{currentQuizData.winType === 'tsumo' ? (isEn ? 'Tsumo' : 'ツモ') : (isEn ? 'Ron' : 'ロン')}
               </span>
-              {currentQuiz.riichi > 0 && (
+              {currentQuizData.riichi > 0 && (
                 <span className="px-2.5 py-1 rounded-lg bg-amber-950 text-amber-300 border border-amber-800/40">
-                  立直 (リーチ宣言あり)
+                  {isEn ? 'Riichi Declared' : '立直 (リーチ宣言あり)'}
                 </span>
               )}
               <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">
-                ドラ表示牌: {currentQuiz.doraIndicators.map(d => TILE_LABELS[d] || d).join(', ')}
+                {isEn ? 'Dora Indicator: ' : 'ドラ表示牌: '}{currentQuizData.doraIndicators.map(d => getTileLabel(d)).join(', ')}
               </span>
             </div>
 
             {/* Hand Display */}
             <div className="bg-slate-950/90 p-4 rounded-xl border border-slate-800/80 shadow-inner overflow-x-auto">
               <div className="inline-flex items-end gap-1.5 min-w-max">
-                {currentQuiz.tiles.slice(0, 13).map((tileCode, idx) => (
+                {currentQuizData.tiles.slice(0, 13).map((tileCode, idx) => (
                   <MahjongTile key={`q-tile-${idx}`} tile={tileCode} size="sm" />
                 ))}
 
@@ -1066,10 +1295,10 @@ export const ScoreCalculator: React.FC = () => {
 
                 <div className="relative flex flex-col items-center">
                   <span className="text-[9px] font-black text-amber-300 bg-amber-950/90 border border-amber-500/50 px-1 rounded -mb-1 z-10 animate-bounce">
-                    和了
+                    {isEn ? 'Win' : '和了'}
                   </span>
                   <div className="ring-2 ring-amber-400/90 ring-offset-2 ring-offset-slate-950 rounded-[4px]">
-                    <MahjongTile tile={currentQuiz.winTile} size="sm" />
+                    <MahjongTile tile={currentQuizData.winTile} size="sm" />
                   </div>
                 </div>
               </div>
@@ -1080,13 +1309,13 @@ export const ScoreCalculator: React.FC = () => {
               {/* Q1: Han */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-300">
-                  Q1. 翻数は何翻？
+                  {isEn ? 'Q1. How many Han?' : 'Q1. 翻数は何翻？'}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {currentQuiz.options.hanOptions.map((h) => {
+                  {currentQuizData.options.hanOptions.map((h) => {
                     const isSelected = userHanAnswer === h;
-                    const isCorrect = isQuizSubmitted && h === currentQuiz.correctHan;
-                    const isWrong = isQuizSubmitted && isSelected && h !== currentQuiz.correctHan;
+                    const isCorrect = isQuizSubmitted && h === currentQuizData.correctHan;
+                    const isWrong = isQuizSubmitted && isSelected && h !== currentQuizData.correctHan;
 
                     return (
                       <button
@@ -1106,7 +1335,7 @@ export const ScoreCalculator: React.FC = () => {
                           }
                         `}
                       >
-                        {h} 翻
+                        {h} {isEn ? 'Han' : '翻'}
                       </button>
                     );
                   })}
@@ -1116,13 +1345,13 @@ export const ScoreCalculator: React.FC = () => {
               {/* Q2: Fu */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-300">
-                  Q2. 符数は何符？
+                  {isEn ? 'Q2. How many Fu?' : 'Q2. 符数は何符？'}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {currentQuiz.options.fuOptions.map((f) => {
+                  {currentQuizData.options.fuOptions.map((f) => {
                     const isSelected = userFuAnswer === f;
-                    const isCorrect = isQuizSubmitted && f === currentQuiz.correctFu;
-                    const isWrong = isQuizSubmitted && isSelected && f !== currentQuiz.correctFu;
+                    const isCorrect = isQuizSubmitted && f === currentQuizData.correctFu;
+                    const isWrong = isQuizSubmitted && isSelected && f !== currentQuizData.correctFu;
 
                     return (
                       <button
@@ -1142,7 +1371,7 @@ export const ScoreCalculator: React.FC = () => {
                           }
                         `}
                       >
-                        {f} 符
+                        {f} {isEn ? 'Fu' : '符'}
                       </button>
                     );
                   })}
@@ -1152,13 +1381,13 @@ export const ScoreCalculator: React.FC = () => {
               {/* Q3: Score */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-300">
-                  Q3. 支払点数は？
+                  {isEn ? 'Q3. Total Payment Points?' : 'Q3. 支払点数は？'}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {currentQuiz.options.scoreOptions.map((s) => {
+                  {currentQuizData.options.scoreOptions.map((s) => {
                     const isSelected = userScoreAnswer === s;
-                    const isCorrect = isQuizSubmitted && s === currentQuiz.correctScore;
-                    const isWrong = isQuizSubmitted && isSelected && s !== currentQuiz.correctScore;
+                    const isCorrect = isQuizSubmitted && s === currentQuizData.correctScore;
+                    const isWrong = isQuizSubmitted && isSelected && s !== currentQuizData.correctScore;
 
                     return (
                       <button
@@ -1178,7 +1407,7 @@ export const ScoreCalculator: React.FC = () => {
                           }
                         `}
                       >
-                        {s.toLocaleString()} 点
+                        {s.toLocaleString()} {isEn ? 'pts' : '点'}
                       </button>
                     );
                   })}
@@ -1201,22 +1430,22 @@ export const ScoreCalculator: React.FC = () => {
                     }
                   `}
                 >
-                  回答を提出する
+                  {isEn ? 'Submit Answer' : '回答を提出する'}
                 </button>
               ) : (
                 <div className="w-full flex items-center justify-between gap-4">
                   <div className="flex items-center gap-2">
-                    {userHanAnswer === currentQuiz.correctHan &&
-                    userFuAnswer === currentQuiz.correctFu &&
-                    userScoreAnswer === currentQuiz.correctScore ? (
+                    {userHanAnswer === currentQuizData.correctHan &&
+                    userFuAnswer === currentQuizData.correctFu &&
+                    userScoreAnswer === currentQuizData.correctScore ? (
                       <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-sm">
                         <CheckCircle2 className="w-5 h-5" />
-                        全問正解！お見事です！
+                        {isEn ? 'All Correct! Excellent job!' : '全問正解！お見事です！'}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 text-rose-400 font-bold text-sm">
                         <XCircle className="w-5 h-5" />
-                        惜しい！正解を確認してみましょう。
+                        {isEn ? 'Incorrect! Check the explanation below.' : '惜しい！正解を確認してみましょう。'}
                       </span>
                     )}
                   </div>
@@ -1225,7 +1454,7 @@ export const ScoreCalculator: React.FC = () => {
                     onClick={handleNextQuiz}
                     className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-cyan-900/30 transition-all"
                   >
-                    <span>次の問題へ</span>
+                    <span>{isEn ? 'Next Question' : '次の問題へ'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -1237,10 +1466,12 @@ export const ScoreCalculator: React.FC = () => {
               <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-2 animate-in fade-in duration-200">
                 <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
-                  正解の解説: {currentQuiz.correctFu}符 {currentQuiz.correctHan}翻 ({currentQuiz.scoreDisplay})
+                  {isEn
+                    ? `Explanation: ${currentQuizData.correctFu} Fu ${currentQuizData.correctHan} Han (${localizedQuizScoreDisplay})`
+                    : `正解の解説: ${currentQuizData.correctFu}符 ${currentQuizData.correctHan}翻 (${currentQuizData.scoreDisplay})`}
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  {currentQuiz.explanation}
+                  {localizedQuizExplanation}
                 </p>
               </div>
             )}
@@ -1248,7 +1479,9 @@ export const ScoreCalculator: React.FC = () => {
         </div>
       )}
     </div>
+    </MahjongLanguageContext.Provider>
   );
 };
 
 export default ScoreCalculator;
+

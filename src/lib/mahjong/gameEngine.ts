@@ -325,78 +325,136 @@ export class HumanPlayer extends Majiang.Player {
 
   action(msg: any, callback?: (reply?: any) => void) {
     this._pendingCallback = callback;
-    super.action(msg, callback);
+    try {
+      super.action(msg, callback);
+    } catch (err) {
+      console.error('[HumanPlayer] super.action error:', err);
+      this.reply({});
+    }
   }
 
   action_kaiju(kaiju: any) {
-    this._engine.handleKaiju(kaiju);
-    this.reply({});
+    try {
+      this._engine.handleKaiju(kaiju);
+    } catch (err) {
+      console.error('[HumanPlayer] action_kaiju error:', err);
+    } finally {
+      this.reply({});
+    }
   }
 
   action_qipai(qipai: any) {
-    this._engine.handleQipai(qipai);
-    this.reply({});
+    try {
+      this._engine.handleQipai(qipai);
+    } catch (err) {
+      console.error('[HumanPlayer] action_qipai error:', err);
+    } finally {
+      this.reply({});
+    }
   }
 
   action_zimo(zimo: any, gangzimo?: boolean) {
-    this._engine.handleZimo(zimo, gangzimo);
-    if (zimo.l === this._menfeng) {
-      // It is the human player's turn to act!
-      this._engine.computeTurnActions();
-    } else {
+    try {
+      this._engine.handleZimo(zimo, gangzimo);
+      if (zimo.l === this._menfeng) {
+        // It is the human player's turn to act!
+        this._engine.computeTurnActions();
+      } else {
+        this.reply({});
+      }
+    } catch (err) {
+      console.error('[HumanPlayer] action_zimo error:', err);
       this.reply({});
     }
   }
 
   action_dapai(dapai: any) {
-    this._engine.handleDapai(dapai);
-    if (dapai.l !== this._menfeng) {
-      // Opponent discarded: check if human player can Ron, Chi, Pon, or Kan
-      this._engine.computeCallActions(dapai);
-    } else {
+    try {
+      this._engine.handleDapai(dapai);
+      if (dapai.l !== this._menfeng) {
+        // Opponent discarded: check if human player can Ron, Chi, Pon, or Kan
+        this._engine.computeCallActions(dapai);
+      } else {
+        this.reply({});
+      }
+    } catch (err) {
+      console.error('[HumanPlayer] action_dapai error:', err);
       this.reply({});
     }
   }
 
   action_fulou(fulou: any) {
-    this._engine.handleFulou(fulou);
-    if (fulou.l === this._menfeng && !fulou.m.match(/^[mpsz]\d{4}/)) {
-      // Human called Chi/Pon: now need to discard
-      this._engine.computeDiscardOnlyActions();
-    } else {
+    try {
+      this._engine.handleFulou(fulou);
+      if (fulou.l === this._menfeng && !fulou.m.match(/^[mpsz]\d{4}/)) {
+        // Human called Chi/Pon: now need to discard
+        this._engine.computeDiscardOnlyActions();
+      } else {
+        this.reply({});
+      }
+    } catch (err) {
+      console.error('[HumanPlayer] action_fulou error:', err);
       this.reply({});
     }
   }
 
   action_gang(gang: any) {
-    this._engine.handleGang(gang);
-    this.reply({});
+    try {
+      this._engine.handleGang(gang);
+    } catch (err) {
+      console.error('[HumanPlayer] action_gang error:', err);
+    } finally {
+      this.reply({});
+    }
   }
 
   action_kaigang(kaigang: any) {
-    this._engine.handleKaigang(kaigang);
+    try {
+      this._engine.handleKaigang(kaigang);
+    } catch (err) {
+      console.error('[HumanPlayer] action_kaigang error:', err);
+    }
   }
 
   action_hule(hule: any) {
-    this._engine.handleHule(hule);
-    this.reply({});
+    try {
+      this._engine.handleHule(hule);
+    } catch (err) {
+      console.error('[HumanPlayer] action_hule error:', err);
+    } finally {
+      this.reply({});
+    }
   }
 
   action_pingju(pingju: any) {
-    this._engine.handlePingju(pingju);
-    this.reply({});
+    try {
+      this._engine.handlePingju(pingju);
+    } catch (err) {
+      console.error('[HumanPlayer] action_pingju error:', err);
+    } finally {
+      this.reply({});
+    }
   }
 
   action_jieju(paipu: any) {
-    this._engine.handleJieju(paipu);
-    this.reply({});
+    try {
+      this._engine.handleJieju(paipu);
+    } catch (err) {
+      console.error('[HumanPlayer] action_jieju error:', err);
+    } finally {
+      this.reply({});
+    }
   }
 
   reply(response: any = {}) {
     const cb = this._pendingCallback;
     this._pendingCallback = undefined;
     if (cb) {
-      cb(response);
+      try {
+        cb(response);
+      } catch (err) {
+        console.error('[HumanPlayer] reply callback error:', err);
+      }
     }
   }
 }
@@ -418,6 +476,9 @@ export class MahjongGameEngine {
   private _speedMode: 'normal' | 'fast' = 'normal';
   private _speedMs: number = 800;
   private _isPaused: boolean = false;
+  private _watchdogInterval: ReturnType<typeof setInterval> | null = null;
+  private _lastActivityTime: number = Date.now();
+  private _autoPassTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: MahjongGameOptions = {}) {
     this._options = options;
@@ -567,11 +628,14 @@ export class MahjongGameEngine {
       scores: [0, 1, 2, 3].map(() => this._options.initialScore ?? 25000),
     });
 
+    this._startWatchdog();
+
     // Start with East dealer
     this._game.kaiju(0);
   }
 
   public stop(): void {
+    this._stopWatchdog();
     if (this._cpuPlayers && this._cpuPlayers.length > 0) {
       this._cpuPlayers.forEach((cpu) => cpu.stop());
       this._cpuPlayers = [];
@@ -587,6 +651,7 @@ export class MahjongGameEngine {
   public pause(): void {
     if (this._state.gameStatus !== 'playing') return;
     this._isPaused = true;
+    this._clearAutoPassTimer();
     this._cpuPlayers.forEach((cpu) => cpu.pause());
     this._updateState({ isPaused: true });
   }
@@ -594,7 +659,18 @@ export class MahjongGameEngine {
   public resume(): void {
     if (this._state.gameStatus !== 'playing') return;
     this._isPaused = false;
+    this._lastActivityTime = Date.now();
     this._cpuPlayers.forEach((cpu) => cpu.resume());
+    // If the human player was waiting on a call decision when paused, restart auto-pass timer
+    if (this._state.availableActions.pass && this._humanPlayer?.pendingCallback) {
+      if (this._autoPassTimer) clearTimeout(this._autoPassTimer);
+      this._autoPassTimer = setTimeout(() => {
+        if (this._humanPlayer?.pendingCallback && this._state.availableActions.pass) {
+          console.warn('[MahjongGameEngine] Call action timed out (15s). Auto-passing to resume game.');
+          this.passAction();
+        }
+      }, 15000);
+    }
     this._updateState({ isPaused: false });
   }
 
@@ -612,12 +688,14 @@ export class MahjongGameEngine {
 
   public nextRound(): void {
     if (this._state.gameStatus === 'round_end' && this._game) {
+      this._clearAutoPassTimer();
       this._updateState({
         gameStatus: 'playing',
         isPaused: false,
         roundResult: null,
         availableActions: this._getEmptyActions(),
       });
+      this._lastActivityTime = Date.now();
       // Majiang-core advances to next hand via last()
       this._game.last();
     }
@@ -651,10 +729,88 @@ export class MahjongGameEngine {
   }
 
   // ==========================================================================
+  // Production Watchdog & Stall Recovery
+  // ==========================================================================
+
+  private _startWatchdog(): void {
+    this._stopWatchdog();
+    this._lastActivityTime = Date.now();
+    this._watchdogInterval = setInterval(() => {
+      this._checkWatchdog();
+    }, 1200);
+  }
+
+  private _stopWatchdog(): void {
+    if (this._watchdogInterval) {
+      clearInterval(this._watchdogInterval);
+      this._watchdogInterval = null;
+    }
+    this._clearAutoPassTimer();
+  }
+
+  private _checkWatchdog(): void {
+    if (this._isPaused || this._state.gameStatus !== 'playing' || !this._game) return;
+
+    // NEVER trigger watchdog if human player is currently deciding on a call action (Chi, Peng, Gang, Ron, Pass)
+    if (this._state.availableActions.pass || this._autoPassTimer !== null) {
+      return;
+    }
+
+    // NEVER trigger watchdog if it's the human player's turn to discard
+    if (this._state.activeTurn === 0 || this._state.availableActions.canDiscard) {
+      return;
+    }
+
+    const idleMs = Date.now() - this._lastActivityTime;
+
+    // Failsafe 1: If it's a CPU bot's turn (seat 1, 2, or 3) and no action for > 3500ms
+    if (this._state.activeTurn !== 0 && idleMs > 3500) {
+      console.warn(`[Watchdog] CPU stall detected on seat ${this._state.activeTurn} (idle ${idleMs}ms). Unsticking engine...`);
+
+      // 1. Flush any pending CPU timeout
+      for (const cpu of this._cpuPlayers) {
+        cpu.forceFlushPendingAction();
+      }
+
+      // 2. Unstick Majiang.Game if it is waiting in call_players for CPU bots only (never touch human player)
+      const game = this._game as any;
+      if (game && Array.isArray(game._reply)) {
+        let filledAny = false;
+        // Check only CPU bot seats (1, 2, 3) - NEVER auto-fill human player (seat 0)
+        for (let l = 1; l < 4; l++) {
+          const id = game._model?.player_id?.[l];
+          if (id !== undefined && id !== 0 && !game._reply[id]) {
+            console.warn(`[Watchdog] CPU Player ${id} (seat ${l}) missing reply in game._reply, auto-filling.`);
+            game._reply[id] = {};
+            filledAny = true;
+          }
+        }
+        if (filledAny && !game._timeout_id) {
+          try {
+            game._timeout_id = setTimeout(() => game.next(), 0);
+          } catch (err) {
+            console.error('[Watchdog] Error triggering game.next():', err);
+          }
+        }
+      }
+
+      this._lastActivityTime = Date.now();
+    }
+  }
+
+  private _clearAutoPassTimer(): void {
+    if (this._autoPassTimer) {
+      clearTimeout(this._autoPassTimer);
+      this._autoPassTimer = null;
+    }
+  }
+
+  // ==========================================================================
   // Human Player Action Triggers
   // ==========================================================================
 
   public discard(tile: string): void {
+    this._clearAutoPassTimer();
     if (!this._humanPlayer?.pendingCallback) return;
     const majiangTile = toMajiangTile(tile);
     this._updateState({ availableActions: this._getEmptyActions() });
@@ -662,6 +818,7 @@ export class MahjongGameEngine {
   }
 
   public declareRiichi(tile: string): void {
+    this._clearAutoPassTimer();
     if (!this._humanPlayer?.pendingCallback) return;
     const majiangTile = toMajiangTile(tile);
     this._updateState({ availableActions: this._getEmptyActions() });
@@ -669,30 +826,35 @@ export class MahjongGameEngine {
   }
 
   public declareTsumo(): void {
+    this._clearAutoPassTimer();
     if (!this._humanPlayer?.pendingCallback) return;
     this._updateState({ availableActions: this._getEmptyActions() });
     this._humanPlayer.reply({ hule: '-' });
   }
 
   public declareRon(): void {
+    this._clearAutoPassTimer();
     if (!this._humanPlayer?.pendingCallback) return;
     this._updateState({ availableActions: this._getEmptyActions() });
     this._humanPlayer.reply({ hule: '-' });
   }
 
   public callChi(meld: string): void {
+    this._clearAutoPassTimer();
     if (!this._humanPlayer?.pendingCallback) return;
     this._updateState({ availableActions: this._getEmptyActions() });
     this._humanPlayer.reply({ fulou: meld });
   }
 
   public callPeng(meld: string): void {
+    this._clearAutoPassTimer();
     if (!this._humanPlayer?.pendingCallback) return;
     this._updateState({ availableActions: this._getEmptyActions() });
     this._humanPlayer.reply({ fulou: meld });
   }
 
   public callGang(meld: string): void {
+    this._clearAutoPassTimer();
     if (!this._humanPlayer?.pendingCallback) return;
     this._updateState({ availableActions: this._getEmptyActions() });
     // If Daiminkan (on opponent discard), send fulou. If Ankan/Kakan (on turn), send gang.
@@ -704,12 +866,14 @@ export class MahjongGameEngine {
   }
 
   public declareKyuushuu(): void {
+    this._clearAutoPassTimer();
     if (!this._humanPlayer?.pendingCallback) return;
     this._updateState({ availableActions: this._getEmptyActions() });
     this._humanPlayer.reply({ daopai: '-' });
   }
 
   public passAction(): void {
+    this._clearAutoPassTimer();
     if (!this._humanPlayer?.pendingCallback) return;
     this._updateState({ availableActions: this._getEmptyActions() });
     this._humanPlayer.reply({});
@@ -735,6 +899,7 @@ export class MahjongGameEngine {
   }
 
   private _updateState(partial: Partial<MahjongGameState>): void {
+    this._lastActivityTime = Date.now();
     this._state = { ...this._state, ...partial };
     this._stateListeners.forEach((listener) => listener(this._state));
   }
@@ -1337,90 +1502,145 @@ export class MahjongGameEngine {
 
   public computeCallActions(dapai: any): void {
     if (!this._humanPlayer) return;
-    const shoupai = this._humanPlayer.shoupai;
-    const discardTile = dapai.p; // e.g. 'm1'
-    const discardSeat = dapai.l;
-    const humanSeat = this._humanPlayer._menfeng;
 
-    // Ron check
-    const canRon = this._humanPlayer.allow_hule(shoupai, discardTile);
+    try {
+      const shoupai = this._humanPlayer.shoupai;
+      const cleanTile = (dapai.p || '').replace(/[_*]/g, '');
+      const discardSeat = dapai.l;
+      const humanSeat = this._humanPlayer._menfeng;
 
-    // Chi check: Can only call Chi from Kamicha (player on left)
-    const isKamicha = (discardSeat + 1) % 4 === humanSeat;
-    let chiOptions: ChiOption[] = [];
-    if (isKamicha) {
-      const rawChi = this._humanPlayer.get_chi_mianzi(shoupai, discardTile + '-') || [];
-      chiOptions = rawChi.map((m) => ({
-        meld: m,
-        tiles: parseMeld(m).tiles,
-      }));
-    }
+      // Ron check
+      let canRon = false;
+      try {
+        canRon = this._humanPlayer.allow_hule(shoupai, cleanTile);
+      } catch (err) {
+        console.error('[HumanPlayer] allow_hule error:', err);
+      }
 
-    // Pon check: Can call Pon from any player
-    const directionChar = ['_', '+', '=', '-'][(4 + discardSeat - humanSeat) % 4];
-    const rawPeng = this._humanPlayer.get_peng_mianzi(shoupai, discardTile + directionChar) || [];
-    const pengOptions: PengOption[] = rawPeng.map((m) => ({
-      meld: m,
-      tiles: parseMeld(m).tiles,
-    }));
+      // Chi check: Can only call Chi from Kamicha (player on left)
+      const isKamicha = (discardSeat + 1) % 4 === humanSeat;
+      let chiOptions: ChiOption[] = [];
+      if (isKamicha) {
+        try {
+          const rawChi = this._humanPlayer.get_chi_mianzi(shoupai, cleanTile + '-') || [];
+          chiOptions = rawChi.map((m) => ({
+            meld: m,
+            tiles: parseMeld(m).tiles,
+          }));
+        } catch (err) {
+          console.error('[HumanPlayer] get_chi_mianzi error:', err);
+        }
+      }
 
-    // Daiminkan check: Can call Minkan from any player
-    const rawGang = this._humanPlayer.get_gang_mianzi(shoupai, discardTile + directionChar) || [];
-    const gangOptions: GangOption[] = rawGang.map((m) => {
-      const parsed = parseMeld(m);
-      return {
-        meld: m,
-        tiles: parsed.tiles,
-        type: 'minkan',
-      };
-    });
+      // Pon check: Can call Pon from any player
+      const directionChar = ['_', '+', '=', '-'][(4 + discardSeat - humanSeat) % 4];
+      let pengOptions: PengOption[] = [];
+      try {
+        const rawPeng = this._humanPlayer.get_peng_mianzi(shoupai, cleanTile + directionChar) || [];
+        pengOptions = rawPeng.map((m) => ({
+          meld: m,
+          tiles: parseMeld(m).tiles,
+        }));
+      } catch (err) {
+        console.error('[HumanPlayer] get_peng_mianzi error:', err);
+      }
 
-    const hasAnyAction =
-      canRon ||
-      chiOptions.length > 0 ||
-      pengOptions.length > 0 ||
-      gangOptions.length > 0;
+      // Daiminkan check: Can call Minkan from any player
+      let gangOptions: GangOption[] = [];
+      try {
+        const rawGang = this._humanPlayer.get_gang_mianzi(shoupai, cleanTile + directionChar) || [];
+        gangOptions = rawGang.map((m) => {
+          const parsed = parseMeld(m);
+          return {
+            meld: m,
+            tiles: parsed.tiles,
+            type: 'minkan',
+          };
+        });
+      } catch (err) {
+        console.error('[HumanPlayer] get_gang_mianzi error:', err);
+      }
 
-    if (hasAnyAction) {
-      const availableActions: AvailableActions = {
-        canDiscard: false,
-        discardableTiles: [],
-        riichi: { allowed: false, discardTiles: [] },
-        tsumo: false,
-        ron: canRon,
-        chi: chiOptions,
-        peng: pengOptions,
-        gang: gangOptions,
-        pass: true, // User can pass on calls/ron
-        kyuushuu: false,
-      };
-      this._updateState({ availableActions });
-    } else {
-      // No actions available: immediately proceed
+      const hasAnyAction =
+        canRon ||
+        chiOptions.length > 0 ||
+        pengOptions.length > 0 ||
+        gangOptions.length > 0;
+
+      if (hasAnyAction) {
+        const availableActions: AvailableActions = {
+          canDiscard: false,
+          discardableTiles: [],
+          riichi: { allowed: false, discardTiles: [] },
+          tsumo: false,
+          ron: canRon,
+          chi: chiOptions,
+          peng: pengOptions,
+          gang: gangOptions,
+          pass: true, // User can pass on calls/ron
+          kyuushuu: false,
+        };
+        this._updateState({ availableActions });
+
+        // Auto-pass timer (15s) so game never hangs indefinitely if user is AFK/confused
+        if (this._autoPassTimer) clearTimeout(this._autoPassTimer);
+        this._autoPassTimer = setTimeout(() => {
+          if (this._humanPlayer?.pendingCallback && this._state.availableActions.pass) {
+            console.warn('[MahjongGameEngine] Call action timed out (15s). Auto-passing to resume game.');
+            this.passAction();
+          }
+        }, 15000);
+      } else {
+        // No actions available: immediately proceed
+        if (this._autoPassTimer) {
+          clearTimeout(this._autoPassTimer);
+          this._autoPassTimer = null;
+        }
+        this._humanPlayer.reply({});
+      }
+    } catch (err) {
+      console.error('[MahjongGameEngine] computeCallActions error, auto-proceeding:', err);
+      if (this._autoPassTimer) {
+        clearTimeout(this._autoPassTimer);
+        this._autoPassTimer = null;
+      }
       this._humanPlayer.reply({});
     }
   }
 
   public computeDiscardOnlyActions(): void {
     if (!this._humanPlayer) return;
-    const shoupai = this._humanPlayer.shoupai;
-    const legalDapai = this._humanPlayer.get_dapai(shoupai) || [];
-    const stdDapai = legalDapai.map(toStandardTile);
+    try {
+      const shoupai = this._humanPlayer.shoupai;
+      let legalDapai: string[] = [];
+      try {
+        legalDapai = this._humanPlayer.get_dapai(shoupai) || [];
+      } catch (err) {
+        console.warn('[computeDiscardOnlyActions] get_dapai error:', err);
+      }
+      let stdDapai = legalDapai.map(toStandardTile);
+      if (stdDapai.length === 0) {
+        const handInfo = extractHandTiles(shoupai);
+        stdDapai = handInfo.concealedTiles;
+      }
 
-    const availableActions: AvailableActions = {
-      canDiscard: true,
-      discardableTiles: stdDapai,
-      riichi: { allowed: false, discardTiles: [] },
-      tsumo: false,
-      ron: false,
-      chi: [],
-      peng: [],
-      gang: [],
-      pass: false,
-      kyuushuu: false,
-    };
+      const availableActions: AvailableActions = {
+        canDiscard: true,
+        discardableTiles: stdDapai,
+        riichi: { allowed: false, discardTiles: [] },
+        tsumo: false,
+        ron: false,
+        chi: [],
+        peng: [],
+        gang: [],
+        pass: false,
+        kyuushuu: false,
+      };
 
-    this._updateState({ availableActions });
+      this._updateState({ availableActions });
+    } catch (err) {
+      console.error('[computeDiscardOnlyActions] error:', err);
+    }
   }
 
   private _computeMyHandInfo(): HandInfo {
@@ -1436,29 +1656,59 @@ export class MahjongGameEngine {
       };
     }
 
-    const shoupai = this._humanPlayer.shoupai;
-    const extracted = extractHandTiles(shoupai);
-    const shanten = Majiang.Util.xiangting(shoupai);
-    const isTenpai = shanten === 0;
+    try {
+      const shoupai = this._humanPlayer.shoupai;
+      const extracted = extractHandTiles(shoupai);
+      let shanten = 8;
+      try {
+        shanten = Majiang.Util.xiangting(shoupai);
+      } catch {
+        shanten = 8;
+      }
+      const isTenpai = shanten === 0;
 
-    let waits: string[] = [];
-    if (isTenpai) {
-      // If holding 14 tiles (zimo), compute waits for tenpai hand without drawn tile
-      const tempShoupai = shoupai._zimo
-        ? shoupai.clone().dapai(shoupai._zimo, false)
-        : shoupai;
-      waits = (Majiang.Util.tingpai(tempShoupai) || []).map(toStandardTile);
+      let waits: string[] = [];
+      if (isTenpai) {
+        try {
+          let tempShoupai = shoupai;
+          if (shoupai._zimo) {
+            // Only dapai if _zimo is a single 2-char tile (e.g. 'm1', 'z7')
+            // After fulou, _zimo is a meld string like 'm4-56' which cannot be discarded!
+            if (typeof shoupai._zimo === 'string' && shoupai._zimo.length === 2 && !shoupai._zimo.match(/[-+=]/)) {
+              tempShoupai = shoupai.clone().dapai(shoupai._zimo, false);
+            } else {
+              const clone = shoupai.clone();
+              clone._zimo = null;
+              tempShoupai = clone;
+            }
+          }
+          waits = (Majiang.Util.tingpai(tempShoupai) || []).map(toStandardTile);
+        } catch (err) {
+          waits = [];
+        }
+      }
+
+      return {
+        tiles: extracted.tiles,
+        concealedTiles: extracted.concealedTiles,
+        tsumoTile: extracted.tsumoTile,
+        melds: extracted.melds,
+        isTenpai,
+        shanten,
+        waits,
+      };
+    } catch (err) {
+      console.error('[MahjongGameEngine] _computeMyHandInfo error:', err);
+      return {
+        tiles: [],
+        concealedTiles: [],
+        tsumoTile: null,
+        melds: [],
+        isTenpai: false,
+        shanten: 8,
+        waits: [],
+      };
     }
-
-    return {
-      tiles: extracted.tiles,
-      concealedTiles: extracted.concealedTiles,
-      tsumoTile: extracted.tsumoTile,
-      melds: extracted.melds,
-      isTenpai,
-      shanten,
-      waits,
-    };
   }
 
   // ==========================================================================

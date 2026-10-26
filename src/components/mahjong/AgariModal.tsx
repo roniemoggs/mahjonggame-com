@@ -24,6 +24,15 @@ import {
   Crown,
   Layers,
 } from 'lucide-react';
+import {
+  formatSeatName,
+  formatRoundDisplayName,
+  formatPlayerDisplayName,
+  formatYakuName,
+  getScoreTitleEn,
+  useMahjongLanguage,
+  type MahjongLang,
+} from '../../lib/mahjong/i18n';
 
 const SEAT_NAMES: SeatName[] = ['東', '南', '西', '北'];
 
@@ -41,7 +50,7 @@ export interface AgariModalProps {
   isGameOver?: boolean;
   onNextRound: () => void;
   onRestartGame: () => void;
-  lang?: 'ja' | 'en';
+  lang?: MahjongLang;
 }
 
 /**
@@ -119,7 +128,7 @@ export function getScoreTitle(
  * Dealer Tsumo: "ツモ: 4000点オール"
  * Ron: "ロン: 8000点"
  */
-function getPaymentBreakdown(roundResult: RoundResult, _round?: RoundInfo): string {
+function getPaymentBreakdown(roundResult: RoundResult, _round?: RoundInfo, isEn = false): string {
   if (roundResult.type !== 'hule') return '';
   const winnerSeat = roundResult.winnerSeat ?? 0;
   const isDealer = winnerSeat === 0; // Current hand dealer is seat 0
@@ -129,7 +138,7 @@ function getPaymentBreakdown(roundResult: RoundResult, _round?: RoundInfo): stri
     // Ron win: single payer
     const loserSeat = roundResult.loserSeat;
     const paid = Math.abs(delta[loserSeat] || roundResult.points || 0);
-    return `ロン: ${paid.toLocaleString()}点`;
+    return isEn ? `Ron: ${paid.toLocaleString()} pts` : `ロン: ${paid.toLocaleString()}点`;
   }
 
   // Tsumo win: multiple payers
@@ -139,7 +148,7 @@ function getPaymentBreakdown(roundResult: RoundResult, _round?: RoundInfo): stri
 
   if (isDealer) {
     const each = otherLosses[0] || Math.round((roundResult.points || 0) / 3);
-    return `ツモ: ${each.toLocaleString()}点オール`;
+    return isEn ? `Tsumo: ${each.toLocaleString()} pts all` : `ツモ: ${each.toLocaleString()}点オール`;
   }
 
   // Non-dealer won: dealer pays more than other two players
@@ -147,7 +156,9 @@ function getPaymentBreakdown(roundResult: RoundResult, _round?: RoundInfo): stri
   const dealerPaid = Math.abs(delta[0] || 0);
   const otherPaid = otherLosses.find((amt) => amt !== dealerPaid) || otherLosses[0];
 
-  return `ツモ: ${otherPaid.toLocaleString()}・${dealerPaid.toLocaleString()}点`;
+  return isEn
+    ? `Tsumo: ${otherPaid.toLocaleString()} / ${dealerPaid.toLocaleString()} pts`
+    : `ツモ: ${otherPaid.toLocaleString()}・${dealerPaid.toLocaleString()}点`;
 }
 
 export const AgariModal: React.FC<AgariModalProps> = ({
@@ -159,8 +170,12 @@ export const AgariModal: React.FC<AgariModalProps> = ({
   isGameOver = false,
   onNextRound,
   onRestartGame,
-  lang: _lang = 'ja',
+  lang: propLang,
 }) => {
+  const mahjongContext = useMahjongLanguage();
+  const lang: MahjongLang = propLang || mahjongContext.lang || 'ja';
+  const isEn = lang === 'en';
+
   // Tabs: 'round' (和了/流局画面) or 'standings' (終局総合順位表)
   const [activeTab, setActiveTab] = useState<'round' | 'standings'>(() => {
     return isGameOver && !roundResult ? 'standings' : 'round';
@@ -242,7 +257,9 @@ export const AgariModal: React.FC<AgariModalProps> = ({
 
   // Level Title calculation for winning hand
   const levelTitleInfo = isWin
-    ? getScoreTitle(roundResult.han, roundResult.fu, roundResult.damanguan)
+    ? isEn
+      ? getScoreTitleEn(roundResult.han, roundResult.fu, roundResult.damanguan)
+      : getScoreTitle(roundResult.han, roundResult.fu, roundResult.damanguan)
     : { title: '', color: '', badgeBg: '' };
 
   const winnerSeat = roundResult?.winnerSeat ?? 0;
@@ -309,7 +326,7 @@ export const AgariModal: React.FC<AgariModalProps> = ({
               }`}
             >
               <Flame className="w-3.5 h-3.5" />
-              局の精算 (和了・流局)
+              {isEn ? 'Round Result' : '局の精算 (和了・流局)'}
             </button>
             <button
               onClick={() => setActiveTab('standings')}
@@ -320,7 +337,7 @@ export const AgariModal: React.FC<AgariModalProps> = ({
               }`}
             >
               <Trophy className="w-3.5 h-3.5 text-amber-400" />
-              最終総合順位 (終局)
+              {isEn ? 'Final Standings' : '最終総合順位 (終局)'}
             </button>
           </div>
         )}
@@ -346,7 +363,15 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-xl sm:text-2xl font-black text-white tracking-wide">
-                        {roundResult.name}
+                        {isEn
+                          ? isWin
+                            ? roundResult.loserSeat !== undefined
+                              ? 'Ron Win'
+                              : 'Tsumo Win'
+                            : isRyukyoku
+                            ? 'Exhaustive Draw'
+                            : roundResult.name
+                          : roundResult.name}
                       </h2>
                       {levelTitleInfo.title && (
                         <span
@@ -357,14 +382,16 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                       )}
                     </div>
                     <p className="text-xs text-slate-400 font-medium">
-                      {round.displayName}（{round.honba}本場 / 供託 {round.riichiSticks * 1000}点）
+                      {formatRoundDisplayName(round.displayName, lang)}（{round.honba}{' '}
+                      {isEn ? 'Honba' : '本場'} / {isEn ? 'Riichi Pot' : '供託'}{' '}
+                      {(round.riichiSticks * 1000).toLocaleString()}{isEn ? ' pts' : '点'}）
                     </p>
                   </div>
                 </div>
 
                 {hasGameOver && (
                   <span className="px-2.5 py-1 rounded-full bg-rose-950/80 border border-rose-500/40 text-[11px] font-black text-rose-300 animate-pulse">
-                    対局終了
+                    {isEn ? 'Game Over' : '対局終了'}
                   </span>
                 )}
               </div>
@@ -385,20 +412,37 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40">
-                              {SEAT_NAMES[winnerSeat]}家 {isDealerWin ? '・親' : '・子'}
+                              {formatSeatName(SEAT_NAMES[winnerSeat], lang)}{' '}
+                              {isDealerWin
+                                ? isEn
+                                  ? '・ Dealer'
+                                  : '・親'
+                                : isEn
+                                ? '・ Non-Dealer'
+                                : '・子'}
                             </span>
                             {winnerSeat === 0 && (
                               <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                                あなた
+                                {isEn ? 'YOU' : 'あなた'}
                               </span>
                             )}
                           </div>
                           <div className="text-lg font-black text-white mt-0.5">
-                            {roundResult.winnerName}
+                            {formatPlayerDisplayName(roundResult.winnerName, lang)}
                           </div>
                           {roundResult.loserName && (
                             <div className="text-xs text-rose-400 font-medium">
-                              放銃: {roundResult.loserName} ({SEAT_NAMES[roundResult.loserSeat ?? 0]}家)
+                              {isEn
+                                ? `Deal-in: ${formatPlayerDisplayName(
+                                    roundResult.loserName,
+                                    lang
+                                  )} (${formatSeatName(
+                                    SEAT_NAMES[roundResult.loserSeat ?? 0],
+                                    lang
+                                  )})`
+                                : `放銃: ${roundResult.loserName} (${
+                                    SEAT_NAMES[roundResult.loserSeat ?? 0]
+                                  }家)`}
                             </div>
                           )}
                         </div>
@@ -408,14 +452,16 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                       <div className="text-right">
                         <div className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 font-mono tracking-tight">
                           {roundResult.points?.toLocaleString()}
-                          <span className="text-sm font-bold text-amber-300 ml-1">点</span>
+                          <span className="text-sm font-bold text-amber-300 ml-1">
+                            {isEn ? 'pts' : '点'}
+                          </span>
                         </div>
                         <div className="text-xs font-mono text-slate-300 font-bold">
-                          {roundResult.han}翻 {roundResult.fu}符
+                          {roundResult.han} {isEn ? 'Han' : '翻'} {roundResult.fu} {isEn ? 'Fu' : '符'}
                           {levelTitleInfo.title ? `【${levelTitleInfo.title}】` : ''}
                         </div>
                         <div className="text-[11px] text-amber-300/80 font-medium">
-                          {getPaymentBreakdown(roundResult, round)}
+                          {getPaymentBreakdown(roundResult, round, isEn)}
                         </div>
                       </div>
                     </div>
@@ -426,10 +472,16 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold text-slate-300 flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                        和了手牌 (Winning Hand)
+                        {isEn ? 'Winning Hand' : '和了手牌 (Winning Hand)'}
                       </span>
                       <span className="text-[11px] font-mono text-slate-400">
-                        {roundResult.loserSeat !== undefined ? 'ロン和了' : '自摸和了'}
+                        {roundResult.loserSeat !== undefined
+                          ? isEn
+                            ? 'Ron Win'
+                            : 'ロン和了'
+                          : isEn
+                          ? 'Tsumo Win'
+                          : '自摸和了'}
                       </span>
                     </div>
 
@@ -446,7 +498,7 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                       {winTile && (
                         <div className="relative ml-2 pl-2 border-l border-white/20 flex flex-col items-center">
                           <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 uppercase mb-0.5 tracking-wider shadow">
-                            {roundResult.loserSeat !== undefined ? 'ロン' : 'ツモ'}
+                            {roundResult.loserSeat !== undefined ? (isEn ? 'RON' : 'ロン') : (isEn ? 'TSUMO' : 'ツモ')}
                           </span>
                           <MahjongTile
                             tile={winTile}
@@ -468,7 +520,9 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                     <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
                       {/* Omote Dora Row */}
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-400 font-bold">ドラ表示牌:</span>
+                        <span className="text-slate-400 font-bold">
+                          {isEn ? 'Dora Indicator:' : 'ドラ表示牌:'}
+                        </span>
                         <div className="flex items-center gap-1">
                           {doraIndicators.map((dora, i) => (
                             <MahjongTile key={i} tile={dora} size="sm" className="opacity-95" />
@@ -476,19 +530,21 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                         </div>
                         {regularDoraYaku && (
                           <span className="text-amber-300 font-mono font-bold text-[11px]">
-                            {regularDoraYaku.name} ×{regularDoraYaku.han}
+                            {formatYakuName(regularDoraYaku.name, lang)} ×{regularDoraYaku.han}
                           </span>
                         )}
                         {akaDoraYaku && (
                           <span className="text-rose-400 font-mono font-bold text-[11px]">
-                            {akaDoraYaku.name} ×{akaDoraYaku.han}
+                            {formatYakuName(akaDoraYaku.name, lang)} ×{akaDoraYaku.han}
                           </span>
                         )}
                       </div>
 
                       {/* Ura-Dora Row */}
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-400 font-bold">裏ドラ表示牌:</span>
+                        <span className="text-slate-400 font-bold">
+                          {isEn ? 'Ura-Dora Indicator:' : '裏ドラ表示牌:'}
+                        </span>
                         {isRiichiWon ? (
                           <div className="flex items-center gap-1">
                             {uraDoraIndicators && uraDoraIndicators.length > 0 ? (
@@ -501,17 +557,19 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                                 />
                               ))
                             ) : (
-                              <span className="text-xs text-slate-500 font-mono">なし</span>
+                              <span className="text-xs text-slate-500 font-mono">
+                                {isEn ? 'None' : 'なし'}
+                              </span>
                             )}
                             {uraDoraYaku && (
                               <span className="text-amber-400 font-mono font-bold text-[11px] ml-1">
-                                {uraDoraYaku.name} ×{uraDoraYaku.han}
+                                {formatYakuName(uraDoraYaku.name, lang)} ×{uraDoraYaku.han}
                               </span>
                             )}
                           </div>
                         ) : (
                           <span className="text-[11px] text-slate-500 italic">
-                            （立直なしのため非公開）
+                            {isEn ? '(Hidden without Riichi)' : '（立直なしのため非公開）'}
                           </span>
                         )}
                       </div>
@@ -521,16 +579,20 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                   {/* Yaku Breakdown Grid */}
                   {roundResult.yaku && roundResult.yaku.length > 0 && (
                     <div className="space-y-1.5">
-                      <span className="text-xs font-bold text-slate-400">成立役 (Yaku Breakdown)</span>
+                      <span className="text-xs font-bold text-slate-400">
+                        {isEn ? 'Yaku Breakdown' : '成立役 (Yaku Breakdown)'}
+                      </span>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {roundResult.yaku.map((y, idx) => (
                           <div
                             key={idx}
                             className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-950/90 border border-slate-800 text-xs shadow-sm hover:border-slate-700 transition"
                           >
-                            <span className="text-slate-200 font-medium truncate">{y.name}</span>
+                            <span className="text-slate-200 font-medium truncate">
+                              {formatYakuName(y.name, lang)}
+                            </span>
                             <span className="font-mono font-bold text-amber-400 ml-2 shrink-0">
-                              {y.han}翻
+                              {y.han} {isEn ? 'Han' : '翻'}
                             </span>
                           </div>
                         ))}
@@ -548,16 +610,20 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                   {/* Ryukyoku Status Banner */}
                   <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-teal-500/30 text-center space-y-1">
                     <div className="text-lg font-black text-teal-300">
-                      {roundResult.name || '荒牌平局 (流局)'}
+                      {isEn ? 'Exhaustive Draw (Ryukyoku)' : (roundResult.name || '荒牌平局 (流局)')}
                     </div>
                     <div className="text-xs text-slate-400">
-                      場に3,000点のノーテン罰符が精算されます
+                      {isEn
+                        ? '3,000 pts Noten penalty distributed among players'
+                        : '場に3,000点のノーテン罰符が精算されます'}
                     </div>
                   </div>
 
                   {/* 4 Players Tenpai vs Noten Hands */}
                   <div className="space-y-2">
-                    <span className="text-xs font-bold text-slate-400">各プレイヤーの聴牌状況</span>
+                    <span className="text-xs font-bold text-slate-400">
+                      {isEn ? 'Player Tenpai (Ready) Status' : '各プレイヤーの聴牌状況'}
+                    </span>
                     <div className="space-y-2">
                       {players.map((p, seatIdx) => {
                         const revealed = roundResult.revealedHands?.find((r) => r.seat === seatIdx);
@@ -576,14 +642,14 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
-                                  {SEAT_NAMES[seatIdx]}
+                                  {formatSeatName(SEAT_NAMES[seatIdx], lang)}
                                 </span>
                                 <span className="text-sm font-bold text-white">
-                                  {p.name}
+                                  {formatPlayerDisplayName(p.name, lang)}
                                 </span>
                                 {seatIdx === 0 && (
                                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                                    あなた
+                                    {isEn ? 'YOU' : 'あなた'}
                                   </span>
                                 )}
                               </div>
@@ -593,12 +659,12 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                                 {isTenpai ? (
                                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/60 text-xs font-black text-emerald-300 flex items-center gap-1">
                                     <CheckCircle2 className="w-3.5 h-3.5" />
-                                    聴牌 (Tenpai)
+                                    {isEn ? 'Tenpai (Ready)' : '聴牌 (Tenpai)'}
                                   </span>
                                 ) : (
                                   <span className="px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-medium text-slate-400 flex items-center gap-1">
                                     <XCircle className="w-3.5 h-3.5" />
-                                    ノーテン
+                                    {isEn ? 'No-ten' : 'ノーテン'}
                                   </span>
                                 )}
 
@@ -612,7 +678,7 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                                       : 'bg-slate-900 text-slate-400'
                                   }`}
                                 >
-                                  {delta > 0 ? `+${delta.toLocaleString()}` : delta.toLocaleString()}点
+                                  {delta > 0 ? `+${delta.toLocaleString()}` : delta.toLocaleString()}{isEn ? ' pts' : '点'}
                                 </span>
                               </div>
                             </div>
@@ -625,7 +691,7 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                                 ))}
                                 {revealed.waits && revealed.waits.length > 0 && (
                                   <div className="ml-2 pl-2 border-l border-white/20 flex items-center gap-1 text-[11px] text-emerald-300 font-mono">
-                                    <span className="text-slate-400">待ち:</span>
+                                    <span className="text-slate-400">{isEn ? 'Waits:' : '待ち:'}</span>
                                     {revealed.waits.map((wait, wIdx) => (
                                       <MahjongTile key={wIdx} tile={wait} size="sm" />
                                     ))}
@@ -648,10 +714,10 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-slate-400 flex items-center gap-1.5">
                     <Coins className="w-4 h-4 text-amber-400" />
-                    点数移動 (Score Transfer)
+                    {isEn ? 'Score Transfer' : '点数移動 (Score Transfer)'}
                   </span>
                   <span className="text-[11px] font-mono text-slate-500">
-                    {transferProgress >= 1 ? '精算完了' : '計算中...'}
+                    {transferProgress >= 1 ? (isEn ? 'Completed' : '精算完了') : (isEn ? 'Calculating...' : '計算中...')}
                   </span>
                 </div>
 
@@ -675,7 +741,8 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                       >
                         {/* Top Seat and Name */}
                         <div className="text-[11px] font-medium text-slate-400 truncate">
-                          {SEAT_NAMES[seatIdx]}家 {p.shortName || p.name}
+                          {formatSeatName(SEAT_NAMES[seatIdx], lang)}{' '}
+                          {formatPlayerDisplayName(p.shortName || p.name, lang)}
                         </div>
 
                         {/* Animated Current Score Counter */}
@@ -711,7 +778,7 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                     className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm shadow-xl shadow-amber-950/60 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                   >
                     <Trophy className="w-5 h-5" />
-                    対局終了：最終結果発表を見る
+                    {isEn ? 'Game Over: View Final Standings' : '対局終了：最終結果発表を見る'}
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 ) : (
@@ -719,7 +786,7 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                     onClick={onNextRound}
                     className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm shadow-xl shadow-emerald-950 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                   >
-                    次局へ進む
+                    {isEn ? 'Proceed to Next Round' : '次局へ進む'}
                     <ChevronRight className="w-4 h-4" />
                     <span className="text-[11px] font-mono text-emerald-200/80 ml-1">
                       (Enter)
@@ -739,13 +806,21 @@ export const AgariModal: React.FC<AgariModalProps> = ({
               <div className="text-center space-y-1.5 py-2">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-bold tracking-wider uppercase">
                   <Trophy className="w-4 h-4 text-amber-400" />
-                  対局終了 - 総合結果発表
+                  {isEn ? 'Match Finished - Final Standings' : '対局終了 - 総合結果発表'}
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide">
-                  {round.gameType === 'tonpuu' ? '東風戦 終局' : '半荘戦 終局'}
+                  {round.gameType === 'tonpuu'
+                    ? isEn
+                      ? 'East Round (Tonpuu) Finished'
+                      : '東風戦 終局'
+                    : isEn
+                    ? 'Full Match (Hanchan) Finished'
+                    : '半荘戦 終局'}
                 </h2>
                 <p className="text-xs text-slate-400">
-                  全対局が終了しました。ウマ・オカ（順位点）を含む総合収支です。
+                  {isEn
+                    ? 'The match is complete. Final standings include Uma & Oka ranking bonuses.'
+                    : '全対局が終了しました。ウマ・オカ（順位点）を含む総合収支です。'}
                 </p>
               </div>
 
@@ -762,8 +837,10 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                         score: sc,
                         name:
                           seat === 0
-                            ? 'あなた'
-                            : players[seat]?.name || `CPU ${SEAT_NAMES[seat]}`,
+                            ? isEn
+                              ? 'YOU'
+                              : 'あなた'
+                            : players[seat]?.name || `CPU ${formatSeatName(SEAT_NAMES[seat], lang)}`,
                         isHuman: seat === 0,
                         avatar: players[seat]?.avatar,
                       }))
@@ -823,25 +900,34 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                                     : 'bg-slate-800 text-slate-400'
                                 }`}
                               >
-                                {isFirst ? <Crown className="w-5 h-5" /> : `${r.rank}位`}
+                                {isFirst ? (
+                                  <Crown className="w-5 h-5" />
+                                ) : isEn ? (
+                                  `${r.rank}${r.rank === 2 ? 'nd' : r.rank === 3 ? 'rd' : 'th'}`
+                                ) : (
+                                  `${r.rank}位`
+                                )}
                               </div>
 
                               <div>
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm sm:text-base font-black text-white">
-                                    {r.name}
+                                    {formatPlayerDisplayName(r.name, lang)}
                                   </span>
                                   {r.isHuman && (
                                     <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                                      あなた
+                                      {isEn ? 'YOU' : 'あなた'}
                                     </span>
                                   )}
                                   <span className="text-xs font-mono text-slate-400">
-                                    ({SEAT_NAMES[r.seat]}家)
+                                    ({formatSeatName(SEAT_NAMES[r.seat], lang)})
                                   </span>
                                 </div>
                                 <div className="text-xs text-slate-400 font-mono mt-0.5">
-                                  持ち点: <span className="font-bold text-slate-200">{r.score.toLocaleString()}点</span>
+                                  {isEn ? 'Final Score:' : '持ち点:'}{' '}
+                                  <span className="font-bold text-slate-200">
+                                    {r.score.toLocaleString()}{isEn ? ' pts' : '点'}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -851,11 +937,20 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                               {/* Breakdown Pills */}
                               <div className="text-right text-[11px] font-mono text-slate-400 space-y-0.5">
                                 <div>
-                                  素点: <span className="text-slate-300">{r.rawPoint > 0 ? `+${r.rawPoint}` : r.rawPoint}pt</span>
+                                  {isEn ? 'Raw:' : '素点:'}{' '}
+                                  <span className="text-slate-300">
+                                    {r.rawPoint > 0 ? `+${r.rawPoint}` : r.rawPoint}pt
+                                  </span>
                                 </div>
                                 <div>
-                                  オカ: <span className="text-amber-300">+{r.oka}pt</span> / ウマ:{' '}
-                                  <span className={r.uma > 0 ? 'text-emerald-300' : 'text-rose-300'}>
+                                  {isEn ? 'Oka:' : 'オカ:'}{' '}
+                                  <span className="text-amber-300">+{r.oka}pt</span> /{' '}
+                                  {isEn ? 'Uma:' : 'ウマ:'}{' '}
+                                  <span
+                                    className={
+                                      r.uma > 0 ? 'text-emerald-300' : 'text-rose-300'
+                                    }
+                                  >
                                     {r.uma > 0 ? `+${r.uma}` : r.uma}pt
                                   </span>
                                 </div>
@@ -864,7 +959,7 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                               {/* Total Points Big Display */}
                               <div className="text-right pl-3 sm:border-l border-slate-800">
                                 <span className="text-[10px] text-slate-400 block font-medium">
-                                  トータル収支
+                                  {isEn ? 'Total Points' : 'トータル収支'}
                                 </span>
                                 <div
                                   className={`text-lg sm:text-xl font-black font-mono tracking-tight ${
@@ -890,8 +985,12 @@ export const AgariModal: React.FC<AgariModalProps> = ({
 
               {/* Rules Explanation Note */}
               <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 leading-relaxed">
-                <span className="text-amber-400 font-bold">順位点計算ルール:</span> 25,000点持ち / 30,000点返し。
-                1位にオカ(+20pt)加算。ウマ順位点 (+15, +5, -5, -15)。
+                <span className="text-amber-400 font-bold">
+                  {isEn ? 'Ranking Point Rules:' : '順位点計算ルール:'}
+                </span>{' '}
+                {isEn
+                  ? '25,000 pts starting / 30,000 pts return. 1st place receives Oka (+20 pts). Uma bonus (+15, +5, -5, -15 pts).'
+                  : '25,000点持ち / 30,000点返し。1位にオカ(+20pt)加算。ウマ順位点 (+15, +5, -5, -15)。'}
               </div>
 
               {/* Action Buttons */}
@@ -902,7 +1001,7 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                     className="flex-1 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <Layers className="w-4 h-4" />
-                    和了・流局の牌譜を見る
+                    {isEn ? 'View Round Result' : '和了・流局の牌譜を見る'}
                   </button>
                 )}
                 <button
@@ -910,7 +1009,7 @@ export const AgariModal: React.FC<AgariModalProps> = ({
                   className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm shadow-xl shadow-emerald-950 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                 >
                   <RotateCw className="w-4 h-4" />
-                  もう一度遊ぶ (Play Again)
+                  {isEn ? 'Play Again' : 'もう一度遊ぶ (Play Again)'}
                 </button>
               </div>
             </div>

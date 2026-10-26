@@ -2,6 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { MahjongTile } from '../mahjong/MahjongTile';
 import { YAKU_LIST, type YakuDefinition, type YakuCategory } from '../../data/yakuData';
 import {
+  MahjongLanguageContext,
+  type MahjongLang,
+} from '../../lib/mahjong/i18n';
+import {
   Search,
   Filter,
   Sparkles,
@@ -18,7 +22,28 @@ import {
   Volume2,
 } from 'lucide-react';
 
-export const YakuEncyclopedia: React.FC = () => {
+interface YakuEncyclopediaProps {
+  lang?: MahjongLang;
+}
+
+const TAG_TRANSLATIONS: Record<string, string> = {
+  '門前役': 'Concealed',
+  '鳴き可': 'Open Allowed',
+  '喰い下がり': 'Kuisagari (-1 Han)',
+  '基本役': 'Fundamental',
+  '偶然役': 'Situational',
+  '順子系': 'Sequences',
+  '刻子系': 'Triplets',
+  '一色手': 'Flush Hand',
+  '一九字牌': 'Terminals & Honors',
+  '幺九牌': 'Terminals & Honors',
+  '特殊役': 'Special Form',
+  '役満': 'Yakuman',
+  'ダブル役満': 'Double Yakuman',
+};
+
+export const YakuEncyclopedia: React.FC<YakuEncyclopediaProps> = ({ lang = 'ja' }) => {
+  const isEn = lang === 'en';
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -98,7 +123,7 @@ export const YakuEncyclopedia: React.FC = () => {
       return (
         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-purple-900 via-rose-900 to-amber-900 text-amber-200 border border-amber-400 shadow-md shadow-amber-500/20">
           <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400 animate-pulse" />
-          ダブル役満
+          {isEn ? 'Double Yakuman' : 'ダブル役満'}
         </span>
       );
     }
@@ -106,40 +131,73 @@ export const YakuEncyclopedia: React.FC = () => {
       return (
         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-amber-950 via-yellow-900 to-amber-950 text-amber-300 border border-amber-400/80 shadow-md shadow-amber-500/20">
           <Award className="w-3.5 h-3.5 text-amber-300" />
-          役満 (YAKUMAN)
+          {isEn ? 'Yakuman' : '役満 (YAKUMAN)'}
         </span>
       );
     }
+    const hanText = isEn ? `${hanMenzen} Han` : `${hanMenzen}翻役`;
     if (cat === '6han') {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-pink-950/80 text-pink-300 border border-pink-500/40">
-          {hanMenzen}翻役
+          {hanText}
         </span>
       );
     }
     if (cat === '3han') {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-950/80 text-purple-300 border border-purple-500/40">
-          {hanMenzen}翻役
+          {hanText}
         </span>
       );
     }
     if (cat === '2han') {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-500/40">
-          {hanMenzen}翻役
+          {hanText}
         </span>
       );
     }
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">
-        {hanMenzen}翻役
+        {hanText}
       </span>
     );
   };
 
+  const formatFrequency = (freq: string, label: string) => {
+    if (!isEn) return label;
+    switch (freq) {
+      case 'very_high':
+        return 'Freq: ★★★★★ (Very High)';
+      case 'high':
+        return 'Freq: ★★★★☆ (Common)';
+      case 'medium':
+        return 'Freq: ★★★☆☆ (Moderate)';
+      case 'low':
+        return 'Freq: ★★☆☆☆ (Low)';
+      case 'rare':
+        return 'Freq: ★☆☆☆☆ (Rare)';
+      default:
+        return label;
+    }
+  };
+
+  const formatOpenHan = (val: number | string) => {
+    const s = String(val);
+    if (!isEn) {
+      return typeof val === 'number' ? `${val}翻` : val;
+    }
+    if (s.includes('なし')) return 'None (Concealed)';
+    if (s.includes('喰い下がり')) {
+      return s.replace('喰い下がり', '').replace('翻', '') + ' Han (Open)';
+    }
+    if (s.includes('役満')) return 'Yakuman';
+    return `${val} Han`;
+  };
+
   return (
-    <div className="space-y-8">
+    <MahjongLanguageContext.Provider value={{ lang, showIndices: isEn, setShowIndices: () => {} }}>
+      <div className="space-y-8">
       {/* Search & Filter Header Box */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl backdrop-blur-md space-y-5">
         {/* Search Bar */}
@@ -149,7 +207,11 @@ export const YakuEncyclopedia: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="役名・読み仮名・キーワードで検索（例: タンヤオ, ピンフ, 大三元, 門前...）"
+            placeholder={
+              isEn
+                ? 'Search by English name, Romaji, Kanji, or keyword (e.g., Tanyao, Pinfu, Daisangen, Concealed...)'
+                : '役名・読み仮名・キーワードで検索（例: タンヤオ, ピンフ, 大三元, 門前...）'
+            }
             className="w-full pl-12 pr-10 py-3.5 rounded-xl bg-slate-950/80 border border-slate-700/80 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-sm transition-all shadow-inner"
           />
           {searchQuery && (
@@ -167,23 +229,27 @@ export const YakuEncyclopedia: React.FC = () => {
           <div className="text-xs font-semibold text-slate-400 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-emerald-400" />
-              翻数別フィルター
+              {isEn ? 'Filter by Han Value' : '翻数別フィルター'}
             </span>
             <span className="text-slate-400 text-[11px]">
-              該当: <strong className="text-emerald-400 font-bold">{filteredYaku.length}</strong> 件 / 全 {YAKU_LIST.length} 役
+              {isEn ? (
+                <>Showing: <strong className="text-emerald-400 font-bold">{filteredYaku.length}</strong> / {YAKU_LIST.length} Yaku</>
+              ) : (
+                <>該当: <strong className="text-emerald-400 font-bold">{filteredYaku.length}</strong> 件 / 全 {YAKU_LIST.length} 役</>
+              )}
             </span>
           </div>
 
           <div className="flex flex-wrap gap-2">
             {[
-              { id: 'all', label: 'すべて', count: YAKU_LIST.length },
-              { id: '1han', label: '1翻役', count: categoryCounts['1han'] },
-              { id: '2han', label: '2翻役', count: categoryCounts['2han'] },
-              { id: '3han', label: '3翻役', count: categoryCounts['3han'] },
-              { id: '6han', label: '6翻役', count: categoryCounts['6han'] },
+              { id: 'all', label: isEn ? 'All Yaku' : 'すべて', count: YAKU_LIST.length },
+              { id: '1han', label: isEn ? '1 Han' : '1翻役', count: categoryCounts['1han'] },
+              { id: '2han', label: isEn ? '2 Han' : '2翻役', count: categoryCounts['2han'] },
+              { id: '3han', label: isEn ? '3 Han' : '3翻役', count: categoryCounts['3han'] },
+              { id: '6han', label: isEn ? '6 Han' : '6翻役', count: categoryCounts['6han'] },
               {
                 id: 'yakuman_all',
-                label: '役満・ダブル役満',
+                label: isEn ? 'Yakuman' : '役満・ダブル役満',
                 count: categoryCounts.yakuman + categoryCounts.double_yakuman,
                 highlight: true,
               },
@@ -222,19 +288,19 @@ export const YakuEncyclopedia: React.FC = () => {
         <div className="space-y-2 pt-2 border-t border-slate-800/80">
           <div className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
             <Filter className="w-3.5 h-3.5 text-emerald-400" />
-            条件・タイプ別絞り込み
+            {isEn ? 'Hand Types & Winning Conditions' : '条件・タイプ別絞り込み'}
           </div>
           <div className="flex flex-wrap gap-1.5 sm:gap-2">
             {[
-              { id: 'all', label: '全条件' },
-              { id: 'menzen_only', label: '門前限定 (鳴き不可)' },
-              { id: 'open_ok', label: '鳴きOK (ポン・チー可)' },
-              { id: 'kuisagari', label: '喰い下がり役' },
-              { id: '順子系', label: '順子系' },
-              { id: '刻子系', label: '刻子系' },
-              { id: '一色手', label: '一色手' },
-              { id: '幺九牌', label: '一九字牌' },
-              { id: '偶然役', label: '偶然役' },
+              { id: 'all', label: isEn ? 'All Types' : '全条件' },
+              { id: 'menzen_only', label: isEn ? 'Concealed Only' : '門前限定 (鳴き不可)' },
+              { id: 'open_ok', label: isEn ? 'Open Hand OK' : '鳴きOK (ポン・チー可)' },
+              { id: 'kuisagari', label: isEn ? 'Kuisagari (-1 Han)' : '喰い下がり役' },
+              { id: '順子系', label: isEn ? 'Sequences' : '順子系' },
+              { id: '刻子系', label: isEn ? 'Triplets' : '刻子系' },
+              { id: '一色手', label: isEn ? 'Flush Hands' : '一色手' },
+              { id: '幺九牌', label: isEn ? 'Terminals & Honors' : '一九字牌' },
+              { id: '偶然役', label: isEn ? 'Situational' : '偶然役' },
             ].map((tag) => {
               const isActive = selectedTag === tag.id;
               return (
@@ -260,7 +326,7 @@ export const YakuEncyclopedia: React.FC = () => {
                 onClick={resetFilters}
                 className="text-xs text-rose-400 hover:text-rose-300 underline underline-offset-4 px-2 py-1 ml-auto"
               >
-                フィルター全解除
+                {isEn ? 'Reset Filters' : 'フィルター全解除'}
               </button>
             )}
           </div>
@@ -273,15 +339,19 @@ export const YakuEncyclopedia: React.FC = () => {
           <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-slate-400 text-xl">
             🀄
           </div>
-          <h3 className="text-lg font-bold text-white">該当する役が見つかりませんでした</h3>
+          <h3 className="text-lg font-bold text-white">
+            {isEn ? 'No Matching Yaku Found' : '該当する役が見つかりませんでした'}
+          </h3>
           <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
-            検索条件またはフィルターを変更してお試しください。
+            {isEn
+              ? 'Try modifying your search query or reset the filter tags.'
+              : '検索条件またはフィルターを変更してお試しください。'}
           </p>
           <button
             onClick={resetFilters}
             className="mt-3 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-900/30 transition-all"
           >
-            全役一覧に戻す
+            {isEn ? 'Show All Yaku' : '全役一覧に戻す'}
           </button>
         </div>
       ) : (
@@ -289,7 +359,8 @@ export const YakuEncyclopedia: React.FC = () => {
           {filteredYaku.map((yaku) => {
             const isExpanded = expandedYakuId === yaku.id;
             const handString = [...yaku.sampleHand.tiles, yaku.sampleHand.winTile].join('');
-            const calcUrl = `/calculator?hand=${encodeURIComponent(handString)}&winTile=${encodeURIComponent(
+            const calcBase = isEn ? '/en/calculator' : '/calculator';
+            const calcUrl = `${calcBase}?hand=${encodeURIComponent(handString)}&winTile=${encodeURIComponent(
               yaku.sampleHand.winTile
             )}&isTsumo=${yaku.sampleHand.isTsumo ? 'true' : 'false'}`;
 
@@ -304,21 +375,21 @@ export const YakuEncyclopedia: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-xl sm:text-2xl font-black text-white tracking-wide group-hover:text-emerald-400 transition-colors">
-                          {yaku.name}
+                          {isEn ? yaku.englishName : yaku.name}
                         </h3>
                         <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-md">
-                          {yaku.reading}
+                          {isEn ? yaku.name : yaku.reading}
                         </span>
                       </div>
                       <div className="text-xs text-slate-400 mt-1 font-sans">
-                        {yaku.englishName}
+                        {isEn ? yaku.reading : yaku.englishName}
                       </div>
                     </div>
 
                     <div className="shrink-0 flex flex-col items-end gap-1.5">
                       {getCategoryBadge(yaku.category, yaku.hanMenzen)}
                       <span className="text-[10px] text-slate-400 font-mono">
-                        {yaku.frequencyLabel}
+                        {formatFrequency(yaku.frequency, yaku.frequencyLabel)}
                       </span>
                     </div>
                   </div>
@@ -326,14 +397,18 @@ export const YakuEncyclopedia: React.FC = () => {
                   {/* Han breakdown: Menzen vs Open */}
                   <div className="flex items-center gap-2 text-xs">
                     <div className="px-2.5 py-1 rounded-md bg-slate-950/80 border border-slate-800 flex items-center gap-1.5 text-slate-300">
-                      <span className="text-slate-400">門前:</span>
+                      <span className="text-slate-400">{isEn ? 'Concealed:' : '門前:'}</span>
                       <strong className="text-white font-bold">
-                        {typeof yaku.hanMenzen === 'number' ? `${yaku.hanMenzen}翻` : yaku.hanMenzen}
+                        {typeof yaku.hanMenzen === 'number'
+                          ? isEn
+                            ? `${yaku.hanMenzen} Han`
+                            : `${yaku.hanMenzen}翻`
+                          : yaku.hanMenzen}
                       </strong>
                     </div>
 
                     <div className="px-2.5 py-1 rounded-md bg-slate-950/80 border border-slate-800 flex items-center gap-1.5 text-slate-300">
-                      <span className="text-slate-400">鳴き:</span>
+                      <span className="text-slate-400">{isEn ? 'Open:' : '鳴き:'}</span>
                       <strong
                         className={
                           yaku.hanOpen.toString().includes('なし')
@@ -343,7 +418,7 @@ export const YakuEncyclopedia: React.FC = () => {
                             : 'text-emerald-400 font-bold'
                         }
                       >
-                        {typeof yaku.hanOpen === 'number' ? `${yaku.hanOpen}翻` : yaku.hanOpen}
+                        {formatOpenHan(yaku.hanOpen)}
                       </strong>
                     </div>
 
@@ -352,7 +427,7 @@ export const YakuEncyclopedia: React.FC = () => {
                         key={t}
                         className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] bg-slate-800/80 text-slate-400 border border-slate-700/40"
                       >
-                        #{t}
+                        #{isEn ? TAG_TRANSLATIONS[t] || t : t}
                       </span>
                     ))}
                   </div>
@@ -367,10 +442,16 @@ export const YakuEncyclopedia: React.FC = () => {
                     <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
                       <span className="font-semibold text-slate-300 flex items-center gap-1">
                         <BookOpen className="w-3 h-3 text-emerald-400" />
-                        和了手牌サンプル（14枚）
+                        {isEn ? 'Sample Winning Hand (14 Tiles)' : '和了手牌サンプル（14枚）'}
                       </span>
                       <span className="text-[10px] text-amber-300 font-mono">
-                        {yaku.sampleHand.isTsumo ? 'ツモ和了' : 'ロン和了'}
+                        {yaku.sampleHand.isTsumo
+                          ? isEn
+                            ? 'Win by Tsumo'
+                            : 'ツモ和了'
+                          : isEn
+                          ? 'Win by Ron'
+                          : 'ロン和了'}
                       </span>
                     </div>
 
@@ -394,7 +475,7 @@ export const YakuEncyclopedia: React.FC = () => {
                         {/* Winning Tile Highlighted */}
                         <div className="relative flex flex-col items-center">
                           <span className="text-[9px] font-black text-amber-400 uppercase tracking-tighter bg-amber-950/90 border border-amber-500/50 px-1 rounded -mb-1 z-10 shadow-sm animate-bounce">
-                            和了
+                            {isEn ? 'Win' : '和了'}
                           </span>
                           <div className="ring-2 ring-amber-400/90 ring-offset-2 ring-offset-slate-950 rounded-[4px] shadow-lg shadow-amber-500/20">
                             <MahjongTile
@@ -414,7 +495,7 @@ export const YakuEncyclopedia: React.FC = () => {
                       <div className="space-y-2">
                         <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                          和了成立の必須条件
+                          {isEn ? 'Winning Conditions' : '和了成立の必須条件'}
                         </div>
                         <ul className="space-y-1.5 text-xs text-slate-300 pl-1">
                           {yaku.conditions.map((cond, i) => (
@@ -430,7 +511,7 @@ export const YakuEncyclopedia: React.FC = () => {
                       <div className="bg-gradient-to-br from-amber-950/30 to-emerald-950/20 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-200/90 space-y-1">
                         <div className="font-bold flex items-center gap-1.5 text-amber-300">
                           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                          実戦での狙い目・ワンポイント攻略
+                          {isEn ? 'Strategy & Pro Tips' : '実戦での狙い目・ワンポイント攻略'}
                         </div>
                         <p className="text-slate-300 text-[11px] sm:text-xs leading-relaxed">
                           {yaku.tips}
@@ -446,7 +527,15 @@ export const YakuEncyclopedia: React.FC = () => {
                     onClick={() => setExpandedYakuId(isExpanded ? null : yaku.id)}
                     className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-emerald-400 transition-colors"
                   >
-                    <span>{isExpanded ? '詳細を閉じる' : '成立条件・攻略のコツを見る'}</span>
+                    <span>
+                      {isExpanded
+                        ? isEn
+                          ? 'Hide details'
+                          : '詳細を閉じる'
+                        : isEn
+                        ? 'Conditions & Tips'
+                        : '成立条件・攻略のコツを見る'}
+                    </span>
                     <ChevronDown
                       className={`w-3.5 h-3.5 transition-transform duration-200 ${
                         isExpanded ? 'rotate-180' : ''
@@ -457,9 +546,9 @@ export const YakuEncyclopedia: React.FC = () => {
                   <a
                     href={calcUrl}
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 text-xs font-bold transition-all shadow-sm group/btn"
-                    title="この手牌を点数計算機に読み込んで符・翻を検証する"
+                    title={isEn ? 'Load hand into Score Calculator' : 'この手牌を点数計算機に読み込んで符・翻を検証する'}
                   >
-                    <span>計算機で検証</span>
+                    <span>{isEn ? 'Test in Calculator' : '計算機で検証'}</span>
                     <ExternalLink className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />
                   </a>
                 </div>
@@ -469,7 +558,9 @@ export const YakuEncyclopedia: React.FC = () => {
         </div>
       )}
     </div>
+    </MahjongLanguageContext.Provider>
   );
 };
 
 export default YakuEncyclopedia;
+

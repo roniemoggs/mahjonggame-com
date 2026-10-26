@@ -9,6 +9,15 @@ import { CPU_PROFILES } from '../../lib/mahjong/cpuPlayer';
 import type { DiscardTile, Meld, RoundResult, SeatName, MahjongGameState } from '../../lib/mahjong/types';
 import type { PeerMultiplayerSession } from '../../lib/mahjong/peerMultiplayer';
 import {
+  MahjongLanguageContext,
+  formatSeatName,
+  formatRoundDisplayName,
+  formatPlayerDisplayName,
+  formatCpuLevel,
+  formatCpuTitle,
+  type MahjongLang,
+} from '../../lib/mahjong/i18n';
+import {
   Trophy,
   Play,
   Pause,
@@ -29,12 +38,13 @@ import {
   Users,
   Globe,
   LogOut,
+  Hash,
 } from 'lucide-react';
 
 const SEAT_NAMES: SeatName[] = ['東', '南', '西', '北'];
 
 interface MahjongTableProps {
-  lang?: 'ja' | 'en';
+  lang?: MahjongLang;
 }
 
 /**
@@ -49,7 +59,10 @@ function chunkDiscards(discards: DiscardTile[], size = 6): DiscardTile[][] {
   return chunks;
 }
 
-export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }) => {
+export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: propLang = 'ja' }) => {
+  const isEn = propLang === 'en';
+  const [showIndices, setShowIndices] = useState<boolean>(isEn);
+
   const {
     round: localRound,
     scores: localScores,
@@ -135,11 +148,11 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
   const showDemoRon = () => {
     setPreviewResult({
       type: 'hule',
-      name: 'ロン和了',
+      name: isEn ? 'Ron Win (Haneman)' : 'ロン和了',
       winnerSeat: 0,
-      winnerName: 'あなた',
+      winnerName: isEn ? 'You' : 'あなた',
       loserSeat: 1,
-      loserName: '初級ボット: たけし',
+      loserName: isEn ? 'Takeshi (Novice)' : '初級ボット: たけし',
       han: 7,
       fu: 40,
       points: 18000,
@@ -159,7 +172,7 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
       ],
       winningHand: {
         seat: 0,
-        playerName: 'あなた',
+        playerName: isEn ? 'You' : 'あなた',
         isDealer: true,
         isRiichi: true,
         concealedTiles: ['2m', '3m', '4m', '5p', '0p', '6p', '7p', '2s', '3s', '4s', '7s', '8s'],
@@ -177,9 +190,9 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
   const showDemoTsumo = () => {
     setPreviewResult({
       type: 'hule',
-      name: 'ツモ和了',
+      name: isEn ? 'Tsumo Win (Mangan)' : 'ツモ和了',
       winnerSeat: 0,
-      winnerName: 'あなた',
+      winnerName: isEn ? 'You' : 'あなた',
       han: 5,
       fu: 40,
       points: 8000,
@@ -198,7 +211,7 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
       ],
       winningHand: {
         seat: 0,
-        playerName: 'あなた',
+        playerName: isEn ? 'You' : 'あなた',
         isDealer: false,
         isRiichi: false,
         concealedTiles: ['2m', '2m', '3m', '3m', '4m', '4m', '6p', '7p', '8p', '2s', '3s', '4s'],
@@ -215,14 +228,14 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
   const showDemoRyukyoku = () => {
     setPreviewResult({
       type: 'pingju',
-      name: '荒牌平局 (流局)',
+      name: isEn ? 'Exhaustive Draw (Ryukyoku)' : '荒牌平局 (流局)',
       initialScores: [25000, 25000, 25000, 25000],
       deltaScores: [3000, -1000, -1000, -1000],
       doraIndicators: ['1m'],
       revealedHands: [
         {
           seat: 0,
-          playerName: 'あなた',
+          playerName: isEn ? 'You' : 'あなた',
           tiles: ['1m', '2m', '3m', '4p', '5p', '6p', '7s', '8s', '9s', '1z', '1z', '1z', '2z'],
           melds: [],
           isTenpai: true,
@@ -230,21 +243,21 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
         },
         {
           seat: 1,
-          playerName: 'たけし',
+          playerName: isEn ? 'Takeshi' : 'たけし',
           tiles: ['1m', '4m', '7m', '2p', '5p', '8p', '3s', '6s', '9s', '1z', '3z', '5z', '7z'],
           melds: [],
           isTenpai: false,
         },
         {
           seat: 2,
-          playerName: 'あおい',
+          playerName: isEn ? 'Aoi' : 'あおい',
           tiles: ['2m', '5m', '8m', '3p', '6p', '9p', '1s', '4s', '7s', '2z', '4z', '6z', '7z'],
           melds: [],
           isTenpai: false,
         },
         {
           seat: 3,
-          playerName: 'けんじ',
+          playerName: isEn ? 'Kenji' : 'けんじ',
           tiles: ['3m', '6m', '9m', '1p', '4p', '7p', '2s', '5s', '8s', '1z', '2z', '3z', '4z'],
           melds: [],
           isTenpai: false,
@@ -268,19 +281,19 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
     players.forEach((p, idx) => {
       if (p.isRiichi && !prevRiichiState.current[idx]) {
         soundManager.playRiichi();
-        const announcerName = idx === 0 ? 'あなた' : p.name;
-        setRiichiBanner(`${announcerName} が立直（リーチ）を宣言！`);
+        const announcerName = idx === 0 ? (isEn ? 'You' : 'あなた') : (isEn ? formatPlayerDisplayName(p.name, 'en') : p.name);
+        setRiichiBanner(isEn ? `${announcerName} declared Riichi!` : `${announcerName} が立直（リーチ）を宣言！`);
         const timer = setTimeout(() => setRiichiBanner(null), 3000);
         return () => clearTimeout(timer);
       }
     });
     prevRiichiState.current = players.map((p) => p.isRiichi);
-  }, [players]);
+  }, [players, isEn]);
 
   // Seat 0: Human (Bottom), 1: Shimocha (Right), 2: Toimen (Top), 3: Kamicha (Left)
   const humanPlayer = players[0] || {
-    name: 'あなた',
-    shortName: 'あなた',
+    name: isEn ? 'You' : 'あなた',
+    shortName: isEn ? 'You' : 'あなた',
     score: 25000,
     isDealer: false,
     isRiichi: false,
@@ -497,317 +510,373 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl overflow-hidden font-sans select-none flex flex-col">
-      {/* =========================================================================
-          MULTIPLAYER STATUS OR CPU BATTLE OPPONENTS PROFILE BAR
-          ========================================================================= */}
-      {isMultiplayer ? (
-        <div className="bg-gradient-to-r from-emerald-950 via-slate-950 to-emerald-950 border-b border-emerald-500/40 px-3.5 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2.5 z-30">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white shadow-md shadow-emerald-950/40">
-              <Globe className="w-4 h-4 animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-sm text-white tracking-wide">
-                  オンライン対戦中 (P2P WebRTC)
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300">
-                  部屋コード: {onlineSession.roomCode}
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-300">
-                  卓権限: {onlineSession.isHost ? 'ホスト (卓主)' : 'ゲスト'}
-                </span>
+    <MahjongLanguageContext.Provider value={{ lang: propLang, showIndices, setShowIndices }}>
+      <div className="w-full max-w-6xl mx-auto rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl overflow-hidden font-sans select-none flex flex-col">
+        {/* =========================================================================
+            MULTIPLAYER STATUS OR CPU BATTLE OPPONENTS PROFILE BAR
+            ========================================================================= */}
+        {isMultiplayer ? (
+          <div className="bg-gradient-to-r from-emerald-950 via-slate-950 to-emerald-950 border-b border-emerald-500/40 px-3.5 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2.5 z-30">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white shadow-md shadow-emerald-950/40">
+                <Globe className="w-4 h-4 animate-pulse" />
               </div>
-              <div className="text-[11px] text-emerald-300/80">
-                スター型トポロジー同期・覗き見防止暗号化通信
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-sm text-white tracking-wide">
+                    {isEn ? 'Online Match (P2P WebRTC)' : 'オンライン対戦中 (P2P WebRTC)'}
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300">
+                    {isEn ? 'Room: ' : '部屋コード: '}{onlineSession.roomCode}
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-300">
+                    {isEn ? 'Role: ' : '卓権限: '}{onlineSession.isHost ? (isEn ? 'Host' : 'ホスト (卓主)') : (isEn ? 'Guest' : 'ゲスト')}
+                  </span>
+                </div>
+                <div className="text-[11px] text-emerald-300/80">
+                  {isEn
+                    ? 'Star topology WebRTC synchronization • Anti-peeking encrypted P2P data'
+                    : 'スター型トポロジー同期・覗き見防止暗号化通信'}
+                </div>
               </div>
             </div>
-          </div>
 
-          <button
-            onClick={() => {
-              onlineSession.leave();
-              setOnlineSession(null);
-              startNewGame();
-            }}
-            className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-red-500/40 hover:border-red-400 text-red-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            対局を抜ける
-          </button>
-        </div>
-      ) : (
-        <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border-b border-slate-800/80 px-3.5 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2.5 z-30">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-800 flex items-center justify-center text-white shadow-md shadow-emerald-950/40">
-              <Swords className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-sm text-white tracking-wide">一人で対局 / CPU戦</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
-                  AI 3名対局
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-400">
-                電脳麻将AI（向聴数・牌効率・鳴き判断・現物筋牌守備・押し引き）
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Online Match Trigger Button + 3 CPU Badges */}
-          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => setIsOnlineLobbyOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs shadow-md shadow-emerald-950/50 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all ring-1 ring-emerald-400/40 animate-pulse hover:animate-none"
-              title="4人リアルタイムオンライン対局ロビーを開く"
+              onClick={() => {
+                onlineSession.leave();
+                setOnlineSession(null);
+                startNewGame();
+              }}
+              className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-red-500/40 hover:border-red-400 text-red-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
-              <Users className="w-3.5 h-3.5" />
-              オンライン対戦
+              <LogOut className="w-3.5 h-3.5" />
+              {isEn ? 'Leave Match' : '対局を抜ける'}
             </button>
-
-            {/* Seat 1: たけし (初級) */}
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/95 border border-emerald-500/30 text-xs shadow-sm"
-              title="初級ボット: たけし - 牌効率重視・全押し型（向聴数を最優先し、リーチにも怯まず攻める）"
-            >
-              <span className="text-sm">👦</span>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1">
-                  <span className="font-bold text-slate-200 text-[11px]">たけし</span>
-                  <span className="px-1 py-0.2 rounded-full bg-emerald-500/20 text-[9px] font-bold text-emerald-300">初級</span>
+          </div>
+        ) : (
+          <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border-b border-slate-800/80 px-3.5 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2.5 z-30">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-800 flex items-center justify-center text-white shadow-md shadow-emerald-950/40">
+                <Swords className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-sm text-white tracking-wide">
+                    {isEn ? 'Single Player vs CPU' : '一人で対局 / CPU戦'}
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+                    {isEn ? '3 AI Opponents' : 'AI 3名対局'}
+                  </span>
                 </div>
-                <span className="text-[9px] text-emerald-300/80">牌効率特化</span>
+                <div className="text-[11px] text-slate-400">
+                  {isEn
+                    ? 'Cyber Mahjong AI (Shanten, Meld Logic, Defense & Push-Fold)'
+                    : '電脳麻将AI（向聴数・牌効率・鳴き判断・現物筋牌守備・押し引き）'}
+                </div>
               </div>
             </div>
 
-            {/* Seat 2: あおい (中級) */}
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/95 border border-cyan-500/30 text-xs shadow-sm"
-              title="中級ボット: あおい - 攻守バランス型（手牌の打点と待ちを見極め、状況に応じた押し引き）"
-            >
-              <span className="text-sm">👩</span>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1">
-                  <span className="font-bold text-slate-200 text-[11px]">あおい</span>
-                  <span className="px-1 py-0.2 rounded-full bg-cyan-500/20 text-[9px] font-bold text-cyan-300">中級</span>
-                </div>
-                <span className="text-[9px] text-cyan-300/80">攻守バランス</span>
-              </div>
-            </div>
+            {/* Right: Online Match Trigger Button + 3 CPU Badges */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setIsOnlineLobbyOpen(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs shadow-md shadow-emerald-950/50 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all ring-1 ring-emerald-400/40 animate-pulse hover:animate-none"
+                title={isEn ? 'Open 4-Player Real-time Multiplayer Lobby' : '4人リアルタイムオンライン対局ロビーを開く'}
+              >
+                <Users className="w-3.5 h-3.5" />
+                {isEn ? 'Online Match' : 'オンライン対戦'}
+              </button>
 
-            {/* Seat 3: けんじ (上級) */}
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/95 border border-purple-500/30 text-xs shadow-sm"
-              title="上級ボット: けんじ - 鉄壁守備・的確な押し引き（現物・筋牌・壁を計算し、好形高打点のみ押す）"
-            >
-              <span className="text-sm">👨‍🦳</span>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1">
-                  <span className="font-bold text-slate-200 text-[11px]">けんじ</span>
-                  <span className="px-1 py-0.2 rounded-full bg-purple-500/20 text-[9px] font-bold text-purple-300">上級</span>
+              {/* Seat 1: たけし (初級) */}
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/95 border border-emerald-500/30 text-xs shadow-sm"
+                title={
+                  isEn
+                    ? 'Novice Bot: Takeshi - Tile efficiency focus, aggressive push without fearing Riichi'
+                    : '初級ボット: たけし - 牌効率重視・全押し型（向聴数を最優先し、リーチにも怯まず攻める）'
+                }
+              >
+                <span className="text-sm">👦</span>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1">
+                    <span className="font-bold text-slate-200 text-[11px]">
+                      {isEn ? 'Takeshi' : 'たけし'}
+                    </span>
+                    <span className="px-1 py-0.2 rounded-full bg-emerald-500/20 text-[9px] font-bold text-emerald-300">
+                      {isEn ? 'Novice' : '初級'}
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-emerald-300/80">
+                    {isEn ? 'Tile Efficiency' : '牌効率特化'}
+                  </span>
                 </div>
-                <span className="text-[9px] text-purple-300/80">鉄壁守備</span>
+              </div>
+
+              {/* Seat 2: あおい (中級) */}
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/95 border border-cyan-500/30 text-xs shadow-sm"
+                title={
+                  isEn
+                    ? 'Intermediate Bot: Aoi - Balanced offense & defense based on hand value and waits'
+                    : '中級ボット: あおい - 攻守バランス型（手牌の打点と待ちを見極め、状況に応じた押し引き）'
+                }
+              >
+                <span className="text-sm">👩</span>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1">
+                    <span className="font-bold text-slate-200 text-[11px]">
+                      {isEn ? 'Aoi' : 'あおい'}
+                    </span>
+                    <span className="px-1 py-0.2 rounded-full bg-cyan-500/20 text-[9px] font-bold text-cyan-300">
+                      {isEn ? 'Mid' : '中級'}
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-cyan-300/80">
+                    {isEn ? 'Balanced' : '攻守バランス'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Seat 3: けんじ (上級) */}
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/95 border border-purple-500/30 text-xs shadow-sm"
+                title={
+                  isEn
+                    ? 'Expert Bot: Kenji - Solid defense calculating genbutsu, suji, and kabe walls'
+                    : '上級ボット: けんじ - 鉄壁守備・的確な押し引き（現物・筋牌・壁を計算し、好形高打点のみ押す）'
+                }
+              >
+                <span className="text-sm">👨‍🦳</span>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1">
+                    <span className="font-bold text-slate-200 text-[11px]">
+                      {isEn ? 'Kenji' : 'けんじ'}
+                    </span>
+                    <span className="px-1 py-0.2 rounded-full bg-purple-500/20 text-[9px] font-bold text-purple-300">
+                      {isEn ? 'Expert' : '上級'}
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-purple-300/80">
+                    {isEn ? 'Iron Defense' : '鉄壁守備'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* =========================================================================
-          TABLE CONTROL HEADER BAR
-          ========================================================================= */}
-      <div className="bg-slate-900/95 border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3 z-20">
-        {/* Left: Round & Wall Info */}
-        <div className="flex items-center flex-wrap gap-2 sm:gap-3">
-          <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 font-bold text-xs sm:text-sm tracking-wide shadow-inner">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            {round.displayName}
-          </div>
-
-          <span className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700/60 text-xs font-medium text-slate-300">
-            {round.honba} 本場
-          </span>
-
-          {/* Riichi Stick 供託棒 Graphic & Counter */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/70 border border-amber-500/40 text-xs font-mono text-amber-300">
-            {/* Realistic 1,000pt Riichi Stick */}
-            <div
-              className="w-7 h-2 rounded-[2px] bg-slate-100 border border-slate-300 flex items-center justify-center shadow-inner"
-              title="供託リーチ棒 (1,000点)"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-red-600 shadow-sm" />
+        {/* =========================================================================
+            TABLE CONTROL HEADER BAR
+            ========================================================================= */}
+        <div className="bg-slate-900/95 border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3 z-20">
+          {/* Left: Round & Wall Info */}
+          <div className="flex items-center flex-wrap gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 font-bold text-xs sm:text-sm tracking-wide shadow-inner">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              {formatRoundDisplayName(round.displayName, propLang)}
             </div>
-            <span>x{round.riichiSticks}</span>
-            <span className="hidden sm:inline text-amber-400/80 font-normal">
-              ({round.riichiSticks * 1000}点)
+
+            <span className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700/60 text-xs font-medium text-slate-300">
+              {round.honba} {isEn ? 'Honba' : '本場'}
+            </span>
+
+            {/* Riichi Stick 供託棒 Graphic & Counter */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/70 border border-amber-500/40 text-xs font-mono text-amber-300">
+              {/* Realistic 1,000pt Riichi Stick */}
+              <div
+                className="w-7 h-2 rounded-[2px] bg-slate-100 border border-slate-300 flex items-center justify-center shadow-inner"
+                title={isEn ? 'Riichi Deposit Stick (1,000 pts)' : '供託リーチ棒 (1,000点)'}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-red-600 shadow-sm" />
+              </div>
+              <span>x{round.riichiSticks}</span>
+              <span className="hidden sm:inline text-amber-400/80 font-normal">
+                ({round.riichiSticks * 1000}{isEn ? ' pts' : '点'})
+              </span>
+            </div>
+
+            <span className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700/60 text-xs font-mono text-slate-300">
+              {isEn ? 'Wall:' : '残り'} <strong className="text-white ml-0.5">{remainingTiles}</strong> {isEn ? 'left' : '枚'}
             </span>
           </div>
 
-          <span className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700/60 text-xs font-mono text-slate-300">
-            残り <strong className="text-white ml-0.5">{remainingTiles}</strong> 枚
-          </span>
-        </div>
-
-        {/* Center: Dora Indicator Bar */}
-        <div className="flex items-center gap-2 bg-slate-950/80 px-3 py-1.5 rounded-2xl border border-slate-800/90 shadow-inner">
-          <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
-            <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500 animate-pulse" />
-            ドラ表示牌
-          </span>
-          <div className="flex items-center gap-1">
-            {doraIndicators.map((dora, i) => (
-              <MahjongTile key={i} tile={dora} size="sm" isDora />
-            ))}
-            {/* Unrevealed Dora Slots */}
-            {Array.from({ length: Math.max(0, 5 - doraIndicators.length) }).map((_, i) => (
-              <div
-                key={`hidden-dora-${i}`}
-                className="w-7 h-[38px] rounded-[4px] border border-slate-700/60 bg-gradient-to-br from-amber-600 via-amber-700 to-amber-900 flex items-center justify-center shadow-inner opacity-80"
-                title="未開示ドラ表示牌"
-              >
-                <span className="text-[10px] text-amber-200/60 font-mono">🀫</span>
-              </div>
-            ))}
+          {/* Center: Dora Indicator Bar */}
+          <div className="flex items-center gap-2 bg-slate-950/80 px-3 py-1.5 rounded-2xl border border-slate-800/90 shadow-inner">
+            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500 animate-pulse" />
+              {isEn ? 'Dora Indicator' : 'ドラ表示牌'}
+            </span>
+            <div className="flex items-center gap-1">
+              {doraIndicators.map((dora, i) => (
+                <MahjongTile key={i} tile={dora} size="sm" isDora />
+              ))}
+              {/* Unrevealed Dora Slots */}
+              {Array.from({ length: Math.max(0, 5 - doraIndicators.length) }).map((_, i) => (
+                <div
+                  key={`hidden-dora-${i}`}
+                  className="w-7 h-[38px] rounded-[4px] border border-slate-700/60 bg-gradient-to-br from-amber-600 via-amber-700 to-amber-900 flex items-center justify-center shadow-inner opacity-80"
+                  title={isEn ? 'Unrevealed Dora Slot' : '未開示ドラ表示牌'}
+                >
+                  <span className="text-[10px] text-amber-200/60 font-mono">🀫</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Right: Controls & Sound Toggle */}
-        <div className="flex items-center gap-2">
-          {gameStatus === 'idle' ? (
-            <button
-              onClick={() => startNewGame()}
-              className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs shadow-md shadow-emerald-950 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              対局開始
-            </button>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={togglePause}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95 ${
-                  isPaused
-                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 ring-2 ring-amber-400/40 animate-pulse'
-                    : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300 hover:text-white'
-                }`}
-                title={isPaused ? '対局を再開する' : '対局を一時停止する'}
-              >
-                {isPaused ? (
-                  <>
-                    <Play className="w-3 h-3 fill-current text-amber-300" />
-                    再開
-                  </>
-                ) : (
-                  <>
-                    <Pause className="w-3 h-3 text-slate-300" />
-                    一時停止
-                  </>
-                )}
-              </button>
-
+          {/* Right: Controls & Sound Toggle */}
+          <div className="flex items-center gap-2">
+            {gameStatus === 'idle' ? (
               <button
                 onClick={() => startNewGame()}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium text-xs transition-colors flex items-center gap-1 cursor-pointer active:scale-95"
-                title="最初からやり直す"
+                className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs shadow-md shadow-emerald-950 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
               >
-                <RotateCw className="w-3 h-3" />
-                最初から
+                <Play className="w-3.5 h-3.5 fill-current" />
+                {isEn ? 'Start Game' : '対局開始'}
               </button>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={togglePause}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95 ${
+                    isPaused
+                      ? 'bg-amber-500/20 border-amber-400 text-amber-300 ring-2 ring-amber-400/40 animate-pulse'
+                      : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300 hover:text-white'
+                  }`}
+                  title={isPaused ? (isEn ? 'Resume Match' : '対局を再開する') : (isEn ? 'Pause Match' : '対局を一時停止する')}
+                >
+                  {isPaused ? (
+                    <>
+                      <Play className="w-3 h-3 fill-current text-amber-300" />
+                      {isEn ? 'Resume' : '再開'}
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="w-3 h-3 text-slate-300" />
+                      {isEn ? 'Pause' : '一時停止'}
+                    </>
+                  )}
+                </button>
 
-          {/* Game Speed Toggle */}
-          <div className="flex items-center gap-0.5 bg-slate-900 p-0.5 rounded-xl border border-slate-800 text-[11px]">
-            <button
-              onClick={() => setSpeedMode('normal')}
-              className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
-                speedMode === 'normal'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-              title="通常速度（思考ディレイ 約800ms）"
-            >
-              通常
-            </button>
-            <button
-              onClick={() => setSpeedMode('fast')}
-              className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
-                speedMode === 'fast'
-                  ? 'bg-amber-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-              title="高速（思考ディレイ 約250ms）"
-            >
-              高速
-            </button>
-          </div>
-
-          {/* Evaluation Preview Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowDemoMenu(!showDemoMenu)}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 text-[11px] font-bold text-amber-300 flex items-center gap-1 cursor-pointer transition shadow-sm"
-              title="和了画面・流局画面・終局画面の表示テスト"
-            >
-              <Trophy className="w-3.5 h-3.5 text-amber-400" />
-              画面確認
-            </button>
-            {showDemoMenu && (
-              <div className="absolute right-0 top-full mt-1.5 w-48 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl py-1.5 z-50 text-xs">
                 <button
-                  onClick={showDemoRon}
-                  className="w-full px-3 py-2 text-left hover:bg-slate-800 text-slate-200 flex items-center gap-2 cursor-pointer font-medium"
+                  onClick={() => startNewGame()}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium text-xs transition-colors flex items-center gap-1 cursor-pointer active:scale-95"
+                  title={isEn ? 'Restart from East 1' : '最初からやり直す'}
                 >
-                  <Flame className="w-3.5 h-3.5 text-rose-400" />
-                  ロン和了画面 (跳満)
-                </button>
-                <button
-                  onClick={showDemoTsumo}
-                  className="w-full px-3 py-2 text-left hover:bg-slate-800 text-slate-200 flex items-center gap-2 cursor-pointer font-medium"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  ツモ和了画面 (満貫)
-                </button>
-                <button
-                  onClick={showDemoRyukyoku}
-                  className="w-full px-3 py-2 text-left hover:bg-slate-800 text-slate-200 flex items-center gap-2 cursor-pointer font-medium"
-                >
-                  <Layers className="w-3.5 h-3.5 text-teal-400" />
-                  流局画面 (ノーテン罰符)
-                </button>
-                <div className="border-t border-slate-800 my-1" />
-                <button
-                  onClick={showDemoGameOver}
-                  className="w-full px-3 py-2 text-left hover:bg-slate-800 text-amber-300 flex items-center gap-2 cursor-pointer font-bold"
-                >
-                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                  終局・総合順位 (ウマ・オカ)
+                  <RotateCw className="w-3 h-3" />
+                  {isEn ? 'Restart' : '最初から'}
                 </button>
               </div>
             )}
-          </div>
 
-          {/* Sound Mute Button */}
-          <button
-            onClick={handleToggleMute}
-            className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
-              isMuted
-                ? 'bg-red-950/40 border-red-500/40 text-red-400 hover:bg-red-900/60'
-                : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-emerald-400 hover:text-emerald-300'
-            }`}
-            title={isMuted ? '音声ミュート解除（打牌音・効果音を再生）' : '音声ミュート（効果音を停止）'}
-            aria-label="Sound Toggle"
-          >
-            {isMuted ? (
-              <VolumeX className="w-4 h-4 text-red-400" />
-            ) : (
-              <Volume2 className="w-4 h-4 text-emerald-400" />
-            )}
-          </button>
+            {/* Game Speed Toggle */}
+            <div className="flex items-center gap-0.5 bg-slate-900 p-0.5 rounded-xl border border-slate-800 text-[11px]">
+              <button
+                onClick={() => setSpeedMode('normal')}
+                className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  speedMode === 'normal'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title={isEn ? 'Normal speed (~800ms AI delay)' : '通常速度（思考ディレイ 約800ms）'}
+              >
+                {isEn ? 'Normal' : '通常'}
+              </button>
+              <button
+                onClick={() => setSpeedMode('fast')}
+                className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  speedMode === 'fast'
+                    ? 'bg-amber-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title={isEn ? 'Fast speed (~250ms AI delay)' : '高速（思考ディレイ 約250ms）'}
+              >
+                {isEn ? 'Fast' : '高速'}
+              </button>
+            </div>
+
+            {/* English Tile Corner Indices Toggle */}
+            <button
+              onClick={() => setShowIndices(!showIndices)}
+              className={`px-2 py-1 rounded-xl font-bold text-[11px] border transition-all cursor-pointer flex items-center gap-1 shadow-sm ${
+                showIndices
+                  ? 'bg-emerald-950/80 border-emerald-400 text-emerald-300 ring-1 ring-emerald-400/40'
+                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+              }`}
+              title={isEn ? 'Toggle English/Arabic numbers and letters on tiles' : '牌の英数字インデックス表示切替'}
+            >
+              <Hash className="w-3 h-3" />
+              <span>{isEn ? 'Indices:' : '数字:'} {showIndices ? 'ON' : 'OFF'}</span>
+            </button>
+
+            {/* Evaluation Preview Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowDemoMenu(!showDemoMenu)}
+                className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 text-[11px] font-bold text-amber-300 flex items-center gap-1 cursor-pointer transition shadow-sm"
+                title={isEn ? 'Inspect Win, Draw, and Game Over Modals' : '和了画面・流局画面・終局画面の表示テスト'}
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                {isEn ? 'Demo UI' : '画面確認'}
+              </button>
+              {showDemoMenu && (
+                <div className="absolute right-0 top-full mt-1.5 w-52 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl py-1.5 z-50 text-xs">
+                  <button
+                    onClick={showDemoRon}
+                    className="w-full px-3 py-2 text-left hover:bg-slate-800 text-slate-200 flex items-center gap-2 cursor-pointer font-medium"
+                  >
+                    <Flame className="w-3.5 h-3.5 text-rose-400" />
+                    {isEn ? 'Ron Win Demo (Haneman)' : 'ロン和了画面 (跳満)'}
+                  </button>
+                  <button
+                    onClick={showDemoTsumo}
+                    className="w-full px-3 py-2 text-left hover:bg-slate-800 text-slate-200 flex items-center gap-2 cursor-pointer font-medium"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    {isEn ? 'Tsumo Win Demo (Mangan)' : 'ツモ和了画面 (満貫)'}
+                  </button>
+                  <button
+                    onClick={showDemoRyukyoku}
+                    className="w-full px-3 py-2 text-left hover:bg-slate-800 text-slate-200 flex items-center gap-2 cursor-pointer font-medium"
+                  >
+                    <Layers className="w-3.5 h-3.5 text-teal-400" />
+                    {isEn ? 'Draw Demo (No-ten Penalty)' : '流局画面 (ノーテン罰符)'}
+                  </button>
+                  <div className="border-t border-slate-800 my-1" />
+                  <button
+                    onClick={showDemoGameOver}
+                    className="w-full px-3 py-2 text-left hover:bg-slate-800 text-amber-300 flex items-center gap-2 cursor-pointer font-bold"
+                  >
+                    <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                    {isEn ? 'Final Results (Uma & Oka)' : '終局・総合順位 (ウマ・オカ)'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Sound Mute Button */}
+            <button
+              onClick={handleToggleMute}
+              className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
+                isMuted
+                  ? 'bg-red-950/40 border-red-500/40 text-red-400 hover:bg-red-900/60'
+                  : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-emerald-400 hover:text-emerald-300'
+              }`}
+              title={
+                isMuted
+                  ? (isEn ? 'Unmute Sound Effects' : '音声ミュート解除（打牌音・効果音を再生）')
+                  : (isEn ? 'Mute Sound Effects' : '音声ミュート（効果音を停止）')
+              }
+              aria-label="Sound Toggle"
+            >
+              {isMuted ? (
+                <VolumeX className="w-4 h-4 text-red-400" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-emerald-400" />
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+
 
       {/* =========================================================================
           MAIN TABLE MAT ARENA (RICH JADE FELT WITH CROSS DISCARD PONDS)
@@ -834,16 +903,20 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
             <div className="w-16 h-16 rounded-3xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-2xl mb-4 animate-pulse">
               <Pause className="w-8 h-8" />
             </div>
-            <h3 className="text-xl sm:text-2xl font-black text-white mb-2">対局を一時停止中</h3>
+            <h3 className="text-xl sm:text-2xl font-black text-white mb-2">
+              {isEn ? 'Match Paused' : '対局を一時停止中'}
+            </h3>
             <p className="text-xs sm:text-sm text-slate-300 max-w-sm mb-6 leading-relaxed">
-              手牌や捨て牌、点数をじっくり確認できます。準備ができたら「対局を再開」を押してください。
+              {isEn
+                ? 'Review your hand, discards, and points. Click "Resume Match" when ready.'
+                : '手牌や捨て牌、点数をじっくり確認できます。準備ができたら「対局を再開」を押してください。'}
             </p>
             <button
               onClick={togglePause}
               className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm shadow-xl shadow-emerald-950 flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95"
             >
               <Play className="w-4 h-4 fill-current" />
-              対局を再開する
+              {isEn ? 'Resume Match' : '対局を再開する'}
             </button>
           </div>
         )}
@@ -867,23 +940,27 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
             </div>
             <div className="flex flex-col items-start">
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-xs text-slate-100">{toimen.name}</span>
+                <span className="font-bold text-xs text-slate-100">
+                  {formatPlayerDisplayName(toimen.name, propLang)}
+                </span>
                 <span className="px-1.5 py-0.2 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-[10px] font-bold text-cyan-300">
-                  {toimen.levelLabel || '中級'}
+                  {formatCpuLevel(toimen.levelLabel || '中級', propLang)}
                 </span>
                 <span className="px-1.5 py-0.2 rounded bg-emerald-950 border border-emerald-500/40 text-[10px] font-bold text-emerald-300">
-                  {toimen.seat}
+                  {formatSeatName(toimen.seat, propLang)}
                 </span>
                 {toimen.isDealer && (
                   <span className="px-1.5 py-0.2 rounded bg-red-950 border border-red-500/50 text-[10px] font-bold text-red-300">
-                    親
+                    {isEn ? 'Dealer' : '親'}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] text-cyan-200/70">{toimen.title || '攻守バランス型'}</span>
+              <span className="text-[10px] text-cyan-200/70">
+                {formatCpuTitle(toimen.title || '攻守バランス型', propLang)}
+              </span>
             </div>
             <span className="font-mono text-sm font-black text-amber-300 ml-1">
-              {toimen.score.toLocaleString()}点
+              {toimen.score.toLocaleString()}{isEn ? ' pts' : '点'}
             </span>
 
             {/* Riichi Status & Stick */}
@@ -891,12 +968,12 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
               <div className="flex items-center gap-1.5 pl-1.5 border-l border-white/20">
                 <div
                   className="w-6 h-2 rounded-[2px] bg-slate-100 border border-slate-300 flex items-center justify-center shadow"
-                  title="リーチ棒 (1,000点)"
+                  title={isEn ? 'Riichi Stick (1,000 pts)' : 'リーチ棒 (1,000点)'}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
                 </div>
                 <span className="px-1.5 py-0.5 rounded bg-amber-500/30 border border-amber-400 text-[10px] text-amber-300 font-bold animate-pulse">
-                  立直
+                  {isEn ? 'Riichi' : '立直'}
                 </span>
               </div>
             )}
@@ -905,7 +982,7 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
             {(activeTurn === 2 || toimen.isThinking) && (
               <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/25 border border-cyan-400 text-cyan-300 text-[10px] font-bold animate-pulse ml-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                <span>思考中...</span>
+                <span>{isEn ? 'Thinking...' : '思考中...'}</span>
               </div>
             )}
           </div>
@@ -937,19 +1014,23 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
                 </div>
                 <div className="flex flex-col items-start">
                   <div className="flex items-center gap-1">
-                    <span className="font-bold text-slate-100 text-[11px]">{kamicha.shortName || 'けんじ'}</span>
+                    <span className="font-bold text-slate-100 text-[11px]">
+                      {formatPlayerDisplayName(kamicha.shortName || kamicha.name, propLang)}
+                    </span>
                     <span className="px-1 rounded-full bg-purple-500/20 border border-purple-500/40 text-[9px] font-bold text-purple-300">
-                      {kamicha.levelLabel || '上級'}
+                      {formatCpuLevel(kamicha.levelLabel || '上級', propLang)}
                     </span>
                     <span className="px-1 rounded bg-emerald-950 border border-emerald-500/40 text-[9px] font-bold text-emerald-300">
-                      {kamicha.seat}
+                      {formatSeatName(kamicha.seat, propLang)}
                     </span>
                   </div>
-                  <span className="text-[9px] text-purple-200/70">{kamicha.title || '鉄壁守備'}</span>
+                  <span className="text-[9px] text-purple-200/70">
+                    {formatCpuTitle(kamicha.title || '鉄壁守備', propLang)}
+                  </span>
                 </div>
               </div>
               <div className="font-mono text-xs font-bold text-amber-300">
-                {kamicha.score.toLocaleString()}点
+                {kamicha.score.toLocaleString()}{isEn ? ' pts' : '点'}
               </div>
 
               {/* Riichi Stick */}
@@ -958,14 +1039,16 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
                   <div className="w-5 h-1.5 rounded-[1px] bg-slate-100 border border-slate-300 flex items-center justify-center">
                     <span className="w-1 h-1 rounded-full bg-red-600" />
                   </div>
-                  <span className="text-[9px] font-bold text-amber-300 animate-pulse">立直</span>
+                  <span className="text-[9px] font-bold text-amber-300 animate-pulse">
+                    {isEn ? 'Riichi' : '立直'}
+                  </span>
                 </div>
               )}
 
               {(activeTurn === 3 || kamicha.isThinking) && (
                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-500/25 border border-purple-400 text-purple-300 text-[9px] font-bold animate-pulse mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping" />
-                  <span>思考中</span>
+                  <span>{isEn ? 'Thinking' : '思考中'}</span>
                 </div>
               )}
             </div>
@@ -1005,7 +1088,7 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
                       : 'text-slate-400'
                   }`}
                 >
-                  {toimen.seat} (あおい)
+                  {formatSeatName(toimen.seat, propLang)} ({formatPlayerDisplayName(toimen.name, propLang)})
                 </div>
 
                 {/* Middle Section: Round Display & Remaining Tiles */}
@@ -1018,21 +1101,21 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
                         : 'text-slate-400'
                     }`}
                   >
-                    {kamicha.seat} (けんじ)
+                    {formatSeatName(kamicha.seat, propLang)} ({formatPlayerDisplayName(kamicha.shortName || kamicha.name, propLang)})
                   </div>
 
                   {/* Center Badge */}
                   <div className="flex flex-col items-center text-center">
                     <span className="text-xs sm:text-sm font-black text-emerald-400 tracking-wider">
-                      {round.displayName}
+                      {formatRoundDisplayName(round.displayName, propLang)}
                     </span>
                     <span className="text-[10px] text-amber-300 font-mono mt-0.5">
-                      {round.honba} 本場
+                      {round.honba} {isEn ? 'Honba' : '本場'}
                     </span>
                     <div className="w-12 h-px bg-slate-800 my-1" />
                     <span className="text-[10px] text-slate-300 font-mono flex items-center gap-1">
                       <Clock className="w-3 h-3 text-slate-400" />
-                      残 {remainingTiles} 枚
+                      {remainingTiles} {isEn ? 'Tiles Left' : '残 枚'}
                     </span>
                   </div>
 
@@ -1044,7 +1127,7 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
                         : 'text-slate-400'
                     }`}
                   >
-                    {shimocha.seat} (たけし)
+                    {formatSeatName(shimocha.seat, propLang)} ({formatPlayerDisplayName(shimocha.shortName || shimocha.name, propLang)})
                   </div>
                 </div>
 
@@ -1056,7 +1139,7 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
                       : 'text-slate-400'
                   }`}
                 >
-                  {humanPlayer.seat} (あなた)
+                  {formatSeatName(humanPlayer.seat, propLang)} ({formatPlayerDisplayName(humanPlayer.name, propLang)})
                 </div>
               </div>
 
@@ -1081,19 +1164,23 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
                 </div>
                 <div className="flex flex-col items-start">
                   <div className="flex items-center gap-1">
-                    <span className="font-bold text-slate-100 text-[11px]">{shimocha.shortName || 'たけし'}</span>
+                    <span className="font-bold text-slate-100 text-[11px]">
+                      {formatPlayerDisplayName(shimocha.shortName || shimocha.name, propLang)}
+                    </span>
                     <span className="px-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[9px] font-bold text-emerald-300">
-                      {shimocha.levelLabel || '初級'}
+                      {formatCpuLevel(shimocha.levelLabel || '初級', propLang)}
                     </span>
                     <span className="px-1 rounded bg-emerald-950 border border-emerald-500/40 text-[9px] font-bold text-emerald-300">
-                      {shimocha.seat}
+                      {formatSeatName(shimocha.seat, propLang)}
                     </span>
                   </div>
-                  <span className="text-[9px] text-emerald-200/70">{shimocha.title || '牌効率特化'}</span>
+                  <span className="text-[9px] text-emerald-200/70">
+                    {formatCpuTitle(shimocha.title || '牌効率特化', propLang)}
+                  </span>
                 </div>
               </div>
               <div className="font-mono text-xs font-bold text-amber-300">
-                {shimocha.score.toLocaleString()}点
+                {shimocha.score.toLocaleString()}{isEn ? ' pts' : '点'}
               </div>
 
               {/* Riichi Stick */}
@@ -1102,14 +1189,16 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
                   <div className="w-5 h-1.5 rounded-[1px] bg-slate-100 border border-slate-300 flex items-center justify-center">
                     <span className="w-1 h-1 rounded-full bg-red-600" />
                   </div>
-                  <span className="text-[9px] font-bold text-amber-300 animate-pulse">立直</span>
+                  <span className="text-[9px] font-bold text-amber-300 animate-pulse">
+                    {isEn ? 'Riichi' : '立直'}
+                  </span>
                 </div>
               )}
 
               {(activeTurn === 1 || shimocha.isThinking) && (
                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400 text-emerald-300 text-[9px] font-bold animate-pulse mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span>思考中</span>
+                  <span>{isEn ? 'Thinking' : '思考中'}</span>
                 </div>
               )}
             </div>
@@ -1169,6 +1258,8 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
               if (onlineSession) onlineSession.declareKyuushuu();
               else localDeclareKyuushuu();
             }}
+            lang={propLang}
+            isPaused={isPaused}
           />
 
           {/* Player Profile & Tenpai/Shanten Badge */}
@@ -1176,32 +1267,36 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white text-xs font-bold shadow">
               <User className="w-3.5 h-3.5" />
             </div>
-            <span className="font-bold text-slate-200">{humanPlayer.name}</span>
+            <span className="font-bold text-slate-200">
+              {formatPlayerDisplayName(humanPlayer.name, propLang)}
+            </span>
             <span className="px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-500/40 text-[11px] font-bold text-emerald-300">
-              {humanPlayer.seat}
+              {formatSeatName(humanPlayer.seat, propLang)}
             </span>
             {humanPlayer.isDealer && (
               <span className="px-1.5 py-0.5 rounded bg-red-950 border border-red-500/50 text-[10px] font-bold text-red-300">
-                親
+                {isEn ? 'Dealer' : '親'}
               </span>
             )}
             <span className="font-mono text-sm font-black text-amber-300">
-              {humanPlayer.score.toLocaleString()}点
+              {humanPlayer.score.toLocaleString()}{isEn ? ' pts' : '点'}
             </span>
 
             {/* Shanten / Tenpai Indicator */}
             {myHand.isTenpai ? (
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 font-bold text-xs animate-pulse">
-                <span>聴牌 (テンパイ)</span>
+                <span>{isEn ? 'Tenpai (Ready)' : '聴牌 (テンパイ)'}</span>
                 {myHand.waits.length > 0 && (
                   <span className="text-[11px] font-mono text-emerald-200 font-normal">
-                    待ち: {myHand.waits.join(', ')}
+                    {isEn ? 'Waits: ' : '待ち: '}{myHand.waits.join(', ')}
                   </span>
                 )}
               </div>
             ) : (
               <span className="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 text-[11px]">
-                {myHand.shanten >= 0 ? `${myHand.shanten} 向聴` : '向聴'}
+                {myHand.shanten >= 0
+                  ? (isEn ? `${myHand.shanten}-Shanten` : `${myHand.shanten} 向聴`)
+                  : (isEn ? 'Ready' : '向聴')}
               </span>
             )}
 
@@ -1211,7 +1306,7 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
                   <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
                 </div>
                 <span className="px-1.5 py-0.5 rounded bg-amber-500/30 border border-amber-400 text-[10px] text-amber-300 font-bold">
-                  立直中
+                  {isEn ? 'Riichi Active' : '立直中'}
                 </span>
               </div>
             )}
@@ -1222,7 +1317,9 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
                 onClick={() => handleExecuteDiscard(selectedTile)}
                 className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md animate-pulse cursor-pointer flex items-center gap-1"
               >
-                {isRiichiMode ? '立直打牌' : '打牌する'} ({selectedTile})
+                {isRiichiMode
+                  ? (isEn ? 'Discard for Riichi' : '立直打牌')
+                  : (isEn ? 'Discard' : '打牌する')} ({selectedTile})
               </button>
             )}
           </div>
@@ -1273,7 +1370,7 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
             {myHand.tsumoTile && (
               <div className="ml-3 sm:ml-5 flex flex-col items-center">
                 <span className="text-[9px] font-bold text-emerald-400/80 mb-0.5 tracking-wider uppercase">
-                  ツモ
+                  {isEn ? 'DRAWN' : 'ツモ'}
                 </span>
                 <div
                   draggable={availableActions.canDiscard && activeTurn === 0}
@@ -1340,7 +1437,7 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
             }
             startNewGame();
           }}
-          lang={_lang}
+          lang={propLang}
         />
       ) : null}
 
@@ -1354,9 +1451,10 @@ export const MahjongTable: React.FC<MahjongTableProps> = ({ lang: _lang = 'ja' }
           setOnlineSession(session);
           setIsOnlineLobbyOpen(false);
         }}
-        lang={_lang}
+        lang={propLang}
       />
     </div>
+    </MahjongLanguageContext.Provider>
   );
 };
 
